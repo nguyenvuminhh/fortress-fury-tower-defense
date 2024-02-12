@@ -1,0 +1,36 @@
+package logic
+
+trait Square:
+  def isEmpty: Boolean
+  def isPlacable: Boolean
+  def tower: Option[Tower]
+  def addTower(tower: Tower): Unit
+  def removeTower(tower: Tower): Unit
+end Square
+
+class Path extends Square:
+  val isEmpty = false
+  val isPlacable = false
+  val tower = None
+  def addTower(tower: Tower) = ()
+  def removeTower(tower: Tower) = ()
+
+
+end Path
+
+class Buildable extends Square:
+  def isEmpty = occupant.isEmpty
+  val isPlacable = true
+  private var occupant: Option[Tower] = None
+  def tower = occupant
+
+  def addTower(tower: Tower) =
+    if this.isEmpty then
+      occupant = Some(tower)
+
+  def removeTower(tower: Tower) =
+    if !this.isEmpty then
+      occupant = None
+
+end Buildable
+
