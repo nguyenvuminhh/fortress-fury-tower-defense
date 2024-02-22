@@ -2,7 +2,7 @@ package logic
 import grid.*
 
 class Map extends Grid[Square](20, 10):
-
+  def initialSquare: GridPos
 end Map
 
 class Map1 extends Map:
@@ -19,6 +19,7 @@ class Map1 extends Map:
     val finalCondition = condition1 || condition2 || condition3 || condition4 || condition5 || condition6
     if finalCondition then Path() else Buildable()
 
+  val initialSquare = GridPos(0, 4)
   
 
 end Map1

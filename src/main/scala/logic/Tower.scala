@@ -1,13 +1,16 @@
 package logic
 import scala.math.pow
 
-trait Tower
+trait Tower:
+  def upgrade(): Unit
+  def upgradePrice: Int
 end Tower
 
 case class Headquarter(x: Int, y: Int, game: Game) extends Entity(x, y) with Tower:
   var level = 1
   var HP = 2000
   var goldPer10s = 10
+  val upgradePrice = 500 + 200*level
 
   def upgrade() =
     level += 1
@@ -15,18 +18,17 @@ case class Headquarter(x: Int, y: Int, game: Game) extends Entity(x, y) with Tow
     goldPer10s = (goldPer10s * 0.05).toInt
 
 
-class GunTower(x: Int, y: Int, game: Game, var damage: Int, var fireRate: Double, range: Double, price: Int) extends Entity(x, y) with Tower:
+class GunTower(x: Int, y: Int, game: Game, var damage: Int, var fireRate: Double, range: Double, val price: Int) extends Entity(x, y) with Tower:
   var level = 1
   var moneySpent = price
   var upgradePrice = (price/15.0).toInt * 10
 
-  def upgrade() = // TODO: tru tien
-    if game.gold >= upgradePrice then
-      level += 1
-      moneySpent += upgradePrice
-      fireRate = fireRate * 0.05
-      damage = (damage * 0.05).toInt // TODO: check if toInt is correct
-    //TODO: Exeption
+  def upgrade() =
+    level += 1
+    moneySpent += upgradePrice
+    fireRate = fireRate * 0.05
+    damage = (damage * 0.05).toInt // TODO: check if toInt is correct
+    //TODO: Exception
 
   def shoot() = ??? // TODO: implement
 

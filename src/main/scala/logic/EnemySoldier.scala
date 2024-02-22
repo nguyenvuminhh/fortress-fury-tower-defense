@@ -1,6 +1,8 @@
 package logic
 
-class EnemySoldier(var x: Double, var y: Double, game: Game, damage: Int) extends Entity(x, y):
+class EnemySoldier(game: Game, damage: Int) extends Entity(x, y):
+     var x = game.map.initialSquare.x
+  var y = game.map.initialSquare.y
   var HP = damage
   val gold = damage/10
   val point = ??? //TODO: Implement
@@ -11,18 +13,19 @@ class EnemySoldier(var x: Double, var y: Double, game: Game, damage: Int) extend
       isDead = true
       game.headquarter.HP -= damage
 
-case class Infantry(var x: Double, var y: Double, game: Game) extends EnemySoldier(x, y, game, 100):
+case class Infantry(game: Game) extends EnemySoldier(game, 100):
 
 end Infantry
 
-case class Calvary(var x: Double, var y: Double, game: Game) extends EnemySoldier(x, y, game, 100):
+case class Calvary(game: Game) extends EnemySoldier(game, 100):
 
 end Calvary
 
-case class ArmoredCar(var x: Double, var y: Double, game: Game) extends EnemySoldier(x, y, game, 100):
+case class ArmoredCar(game: Game) extends EnemySoldier(game, 100):
 
 end ArmoredCar
 
-case class Tank(var x: Double, var y: Double, game: Game) extends EnemySoldier(x, y, game, 100):
+case class Tank(game: Game) extends EnemySoldier(game, 100):
 
 end Tank
+

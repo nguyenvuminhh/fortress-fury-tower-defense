@@ -5,7 +5,7 @@ trait Square:
   def isPlacable: Boolean
   def tower: Option[Tower]
   def addTower(tower: Tower): Unit
-  def removeTower(tower: Tower): Unit
+  def clear(): Unit
 end Square
 
 class Path extends Square:
@@ -28,9 +28,8 @@ class Buildable extends Square:
     if this.isEmpty then
       occupant = Some(tower)
 
-  def removeTower(tower: Tower) =
-    if !this.isEmpty then
-      occupant = None
+  def clear() =
+    occupant = None
 
 end Buildable
 
