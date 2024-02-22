@@ -7,16 +7,16 @@ class Ability(game: Game):
 end Ability
 
 class Rage(game: Game) extends Ability(game):
-  def use() =
+  def use() = ???
     
 end Rage
 
 class Freeze(game: Game) extends Ability(game):
-  def use() =
+  def use() = ???
 
 end Freeze
 
 class Poison(game: Game) extends Ability(game):
-  def use() =
+  def use() = ???
 
 end Poison

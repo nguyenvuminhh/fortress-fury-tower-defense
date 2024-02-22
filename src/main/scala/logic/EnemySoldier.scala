@@ -1,9 +1,10 @@
 package logic
 
 class EnemySoldier(game: Game, damage: Int) extends Entity(x, y):
-     var x = game.map.initialSquare.x
+  var x = game.map.initialSquare.x
   var y = game.map.initialSquare.y
   var HP = damage
+  def minusHP(amount: Int) = HP -= amount
   val gold = damage/10
   val point = ??? //TODO: Implement
   var isDead = false

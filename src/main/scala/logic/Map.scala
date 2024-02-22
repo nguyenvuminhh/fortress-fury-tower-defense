@@ -3,6 +3,7 @@ import grid.*
 
 class Map extends Grid[Square](20, 10):
   def initialSquare: GridPos
+  def HQSquare: GridPos
 end Map
 
 class Map1 extends Map:
@@ -20,6 +21,7 @@ class Map1 extends Map:
     if finalCondition then Path() else Buildable()
 
   val initialSquare = GridPos(0, 4)
+  val HQSquare = GridPos(17, 7)
   
 
 end Map1
