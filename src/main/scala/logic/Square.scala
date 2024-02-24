@@ -14,6 +14,7 @@ class Path extends Square:
   val tower = None
   def addTower(tower: Tower) = ()
   def removeTower(tower: Tower) = ()
+  def clear() = ()
 
 
 end Path

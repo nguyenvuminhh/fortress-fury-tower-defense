@@ -6,11 +6,13 @@ trait Tower:
   def upgradePrice: Int
 end Tower
 
-case class Headquarter(x: Int, y: Int) extends Entity(x, y) with Tower:
+case class Headquarter(x: Double, y: Double) extends Tower:
   var level = 1
   var HP = 2000
   var goldPer10s = 10
-  val upgradePrice = 500 + 200*level
+  def upgradePrice = 500 + 200*level
+  
+  val maxHP = 2000
 
   def upgrade() =
     level += 1
@@ -18,10 +20,10 @@ case class Headquarter(x: Int, y: Int) extends Entity(x, y) with Tower:
     goldPer10s = (goldPer10s * 0.05).toInt
 
 
-class GunTower(x: Int, y: Int, var damage: Int, var fireRate: Double, range: Double, val price: Int) extends Entity(x, y) with Tower:
+class GunTower(x: Int, y: Int, var damage: Int, var fireRate: Double, range: Double, val price: Int) extends Tower:
   private var level = 1
   private var moneySpent = price
-  private var upgradePrice = (price/15.0).toInt * 10
+  def upgradePrice = (price/15.0).toInt * 10
 
   def upgrade() =
     level += 1

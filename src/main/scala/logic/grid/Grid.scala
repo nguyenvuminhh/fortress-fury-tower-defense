@@ -55,7 +55,8 @@ trait Grid[Element: ClassTag](val width: Int, val height: Int):
 
 
   /** Checks whether the grid contains the given x and y coordinates. */
-  private def contains(x: Int, y: Int) = x.isBetween(0, this.width) && y.isBetween(0, this.height)
+  private def contains(x: Int, y: Int) =
+    0 <= x && x < this.width && 0 <= y && y < this.height
 
 
   /** Determines whether the grid contains the given pair of coordinates.

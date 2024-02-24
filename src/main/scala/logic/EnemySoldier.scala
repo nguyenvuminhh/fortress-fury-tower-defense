@@ -1,18 +1,13 @@
 package logic
 
-class EnemySoldier(game: Game, damage: Int) extends Entity(x, y):
-  var x = game.map.initialSquare.x
-  var y = game.map.initialSquare.y
+class EnemySoldier(game: Game, damage: Int):
   var HP = damage
   def minusHP(amount: Int) = HP -= amount
   val gold = damage/10
   val point = ??? //TODO: Implement
   var isDead = false
 
-  def crash() =
-    if this.distanceTo(game.headquarter) <= 1 then
-      isDead = true
-      game.headquarter.HP -= damage
+  def crash() = ???
 
 case class Infantry(game: Game) extends EnemySoldier(game, 100):
 

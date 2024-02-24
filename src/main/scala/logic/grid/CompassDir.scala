@@ -83,13 +83,13 @@ object CompassDir:
   private val next = Clockwise.zip(Clockwise.tail ++ Clockwise.init).toMap
   private val previous = this.next.map( _.swap )
 
-  private type Key = scala.swing.event.Key.Value
-  private val  Key = scala.swing.event.Key
+  private type Key = scalafx.scene.input.KeyEvent
+  private val  Key = scalafx.scene.input.KeyCode
   private val ArrowToDir = Map(Key.Up -> North, Key.Left -> West, Key.Down-> South, Key.Right-> East)
   private val WASDToDir  = Map(Key.W  -> North, Key.A    -> West, Key.S   -> South, Key.D    -> East)
   private val KeyToDir   = ArrowToDir ++ WASDToDir
 
-  /** Returns the [[CompassDir]] that corresponds to the given arrow key.
+  /*/** Returns the [[CompassDir]] that corresponds to the given arrow key.
     * For example, the right arrow corresponds to `East`.
     * @param key  any key on the keyboard
     * @return one of the four `CompassDir`s; `None` if the given key is not one of the four arrow keys
@@ -109,7 +109,7 @@ object CompassDir:
     * @return one of the four `CompassDir`s; `None` if the given key is not one of the four arrow keys
     *         or one of the four WASD keys
     * @see [[fromArrowKey]], [[fromWASD]] */
-  def fromKey(key: Key)      = KeyToDir.get(key)
+  def fromKey(key: Key)      = KeyToDir.get(key)*/ //TODO
 
 end CompassDir
 

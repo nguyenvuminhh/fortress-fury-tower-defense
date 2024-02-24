@@ -17,7 +17,8 @@ trait Game:
   private var gunTowerVector = Vector[GunTower]()
   val headquarter = Headquarter(map.HQSquare.x, map.HQSquare.y)
   private var enemyVector = Vector[EnemySoldier]()
-  def deploy(company: Company) = ???
+
+  def deploy() = ???
   def place(gunTower: GunTower, x: Int, y: Int) =
     if gunTower.price <= gold then
       map.elementAt(GridPos(x, y)).addTower(gunTower)
@@ -43,11 +44,16 @@ trait Game:
 
 end Game
 
-class EndlessGame
+class EndlessGame extends Game:
   def survivingTime: Int = ???
+  val map = Map1()
 
 
-class CampaignGame(level: Int, waveLimit: Int) extends Game:
-  def completeStar = ???
+abstract class CampaignGame(level: Int, waveLimit: Int) extends Game:
+  def completeStar =
+    val rate = headquarter.HP / headquarter.maxHP*1.0
+    if rate >= 0.9 then 3
+    else if rate >= 0.7 then 2
+    else 1
   def win() = ???
 
