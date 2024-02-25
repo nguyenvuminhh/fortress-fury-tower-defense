@@ -1,9 +1,10 @@
 package logic
 
 import logic.grid.GridPos
+import scala.collection.mutable.Buffer
 
 trait Game:
-  val map: Map
+  def map: Map
 
   private var score = 0
   def yieldScore = score
@@ -14,11 +15,12 @@ trait Game:
   private var wave = 0
   def yieldWave = wave
 
+  val headquarter = Headquarter(map.HQSquare.x+0, map.HQSquare.y+0)
   private var gunTowerVector = Vector[GunTower]()
-  val headquarter = Headquarter(map.HQSquare.x, map.HQSquare.y)
-  private var enemyVector = Vector[EnemySoldier]()
+  var enemyVector = Buffer[EnemySoldier]()
 
-  def deploy() = ???
+  def deploy(enemy: EnemySoldier) =
+    enemyVector += enemy
   def place(gunTower: GunTower, x: Int, y: Int) =
     if gunTower.price <= gold then
       map.elementAt(GridPos(x, y)).addTower(gunTower)
@@ -44,16 +46,6 @@ trait Game:
 
 end Game
 
-class EndlessGame extends Game:
-  def survivingTime: Int = ???
-  val map = Map1()
-
-
-abstract class CampaignGame(level: Int, waveLimit: Int) extends Game:
-  def completeStar =
-    val rate = headquarter.HP / headquarter.maxHP*1.0
-    if rate >= 0.9 then 3
-    else if rate >= 0.7 then 2
-    else 1
-  def win() = ???
-
+class EndlessGame(theMap: Map) extends Game:
+  def map = theMap
+  def survivingTime: Int = 0

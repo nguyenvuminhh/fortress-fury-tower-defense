@@ -1,30 +1,43 @@
 package logic
 import grid.*
 
-abstract class Map extends Grid[Square](20, 10):
-  def initialSquare: GridPos
+abstract class Map extends Grid[Square](32, 11):
+  def startingSquare: GridPos
   def HQSquare: GridPos
 end Map
 
-class Map1 extends Map:
-  val initialElements:Seq[Square] = for y <- 0 until 10; x <- 0 until 20 yield initialSquare(x, y)
-
-
+object Map1 extends Map:
   private def initialSquare(x: Int, y: Int): Square =
-    val condition1 = (y == 4 && ((x >= 0 && x <= 4) || (x >= 7 && x <= 14) || (x >= 21 && x <= 27)))
-    val condition2 = (y >= 5 && y <= 7) && (x == 4 || x == 14)
-    val condition3 = ((x >= 4 && x <= 14) && y == 8)
-    val condition4 = (x == 7 && y == 3)
-    val condition5 = (x >= 7 && x <= 17) && y == 2
-    val condition6 = (y >= 3 && y <= 5) && x == 17
-    val condition7 = y == 6 && (x >= 17 && x <= 21)
-    val condition8 = x == 21 && y == 5
-    val condition9 = x == 27 && (y >= 5 && y <= 7)
-    val finalCondition = condition1 || condition2 || condition3 || condition4 || condition5 || condition6 || condition7 || condition8 || condition9
-    if finalCondition then Path() else Buildable()
+    var result: Square = Path()
+    val h1 = ((x >= 0 && x <= 3) || (x >= 8 && x <= 13) || (x >= 22 && x <= 26))  && (y == 4)
+    val h2 = (x >= 5 && x <= 13)                                                  && (y == 8)
+    val h3 = (x >= 8 && x <= 16)                                                  && (y == 2)
+    val h4 = (x >= 18 && x <= 20)                                                 && (y == 6)
+    val v1   = (x == 4 || x == 14 || x == 27)                                       && (y >= 5 && y <= 7)
+    val v2   = (x == 7)                                                             && (y == 3)
+    val v3   = (x == 17)                                                            && (y >= 3 && y <= 5)
+    val v4   = (x == 21)                                                            && (y == 5)
+    val c1     = Vector((4, 4), (14, 4), (17, 2), (27, 4)).contains((x,y))
+    val c2     = Vector((4, 8), (7, 4), (17, 6)).contains((x,y))
+    val c3     = Vector((14, 8), (21, 6)).contains((x,y))
+    val c4     = Vector((7, 2), (21, 4)).contains((x,y))
+    val finalCondition = h1 || h2 || h3 || h4 || v1 || v2 || v3 || v4 || c1 || c2 || c3 || c4
+    if finalCondition then
+      result = Path()
+    else result = Buildable()
+    result
 
-  val initialSquare = GridPos(0, 4)
+  def initialElements: Seq[Square] = {
+    val elements = for {
+      y <- 0 until height
+      x <- 0 until width
+    } yield initialSquare(x, y)
+    elements.toSeq
+  }
+  val startingSquare = GridPos(0, 4)
   val HQSquare = GridPos(17, 7)
-  
+  val turningSquare = Vector(GridPos(4, 4), GridPos(4, 8), GridPos(8, 14), GridPos(14, 4), GridPos(4, 7), GridPos(7, 2), GridPos(2, 17), GridPos(17, 6), GridPos(6, 21), GridPos(21, 4), GridPos(4, 27))
+  val turningDirection = Vector(1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1)
+  val turningVector = turningSquare.zip(turningDirection)
 
 end Map1
