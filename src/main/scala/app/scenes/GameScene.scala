@@ -4,7 +4,6 @@ import app.Scenes
 import app.FortressFuryGUI.stage
 import logic.grid.GridPos
 import logic.{EndlessGame, GunTower, Sharpshooter, Tower, Turret}
-import scalafx.Includes.jfxNode2sfx
 import scalafx.scene.SceneIncludes.jfxNode2sfx
 import scalafx.application.JFXApp3
 import scalafx.beans.property.ObjectProperty
@@ -34,6 +33,7 @@ class GameScene (
 ) extends Scene:
 
   val game = EndlessGame(logic.Map1)
+
   /** UI Variables */
   val squareside = 50
   val windowWidth = 1495
@@ -42,7 +42,7 @@ class GameScene (
   val rowNum = 11
   var selectedGunIndex = -1
   var gunNameCollection = Vector("Sharpshooter", "Cannon", "Turret", "GrenadeLauncher", "Sniper", "RocketLauncher")
-  var selectedTower: Option[Tower] = None
+  var selectedGridPos = GridPos(-1, -1)
   /** Game Variables */
   val level = 1
   def wave = game.yieldWave
@@ -64,10 +64,10 @@ class GameScene (
 
 
   /** GRID */
-  val grid = new GridPane():
+  val gridMap = new GridPane():
     alignmentInParent = scalafx.geometry.Pos.Center
-    prefHeight = rowNum * squareside
-    prefWidth = colNum * squareside
+    maxHeight = rowNum * squareside
+    maxWidth = colNum * squareside
     vgap = -1
     hgap = -1
 
@@ -76,15 +76,11 @@ class GameScene (
       col <- 0 until colNum
     do
       val square = new StackPane:
-        val squareBg = new Rectangle:
-          width = squareside
-          height = squareside
-          fill = Transparent
         val squareImage = new ImageView:
           image =
             val kind = squaretype(col + 1, row)
             if kind == "buildable" then
-              new Image("image/" + kind + min(Random.nextInt(30)+1, 7).toString +  ".png")
+              new Image("image/" + kind  +  ".png") //+ min(Random.nextInt(30)+1, 7).toString
             else new Image("image/" + kind +  ".png")
           fitHeight = squareside
           fitWidth = squareside
@@ -93,18 +89,46 @@ class GameScene (
           fitWidth = squareside*0.9
           image = clearPlaceHolder
 
+
+        val gridForEnemy = new GridPane:
+          maxHeight = squareside
+          maxWidth = squareside
+          hgap = 0
+          vgap = 0
+          for
+            miniRow <- 0 until 5
+            miniCol <- 0 until 5
+          do
+            val enemyImage = new ImageView:
+              image = if miniCol == 2 && miniRow == 2 then sqCannon else clearPlaceHolder
+              fitWidth = squareside
+              fitHeight = squareside
+              layoutY = squareside*3/5
+              layoutX = squareside*3/5
+            val bg = new StackPane:
+              maxHeight = squareside
+              maxWidth = squareside
+              padding = Insets(-squareside*3/5)
+              children = Seq(enemyImage)
+
+            add(bg, miniCol, miniRow)
+
+        children =
+          squaretype(col+1, row) match
+            case "buildable" => Seq(squareImage, gunImage)
+            case _ => Seq(squareImage, gunImage, gridForEnemy)
         onMouseClicked = (event) =>
           if selectedGunIndex != -1 then
             val success = game.place(gunNameCollection(selectedGunIndex), col + 1, row)
             if success then gunImage.image = Image("image/ci" + gunNameCollection(selectedGunIndex) + ".png")
             selectedGunIndex = -1
-          else if !game.map.elementAt(GridPos(col+1, row)).isEmpty then
-            selectedTower = game.map.elementAt(GridPos(col+1, row)).tower //TODO: EDIT METHOD
+          else if !game.map.elementAt(GridPos(col+1, row)).isEmpty && game.map.elementAt(GridPos(col+1, row)).isPlacable then
+          selectedGridPos = GridPos(col+1, row)
 
-
-        children = Seq(squareBg, squareImage, gunImage)
       add(square, col, row)
-  val center = grid
+
+  val center = gridMap
+
 
   /** LEVEL WAVE TEXT */
   val levelWaveValueProperty = StringProperty(wave.toString)
@@ -289,13 +313,20 @@ class GameScene (
     else if c3 then "corner3"
     else if c4 then "corner4"
     else "buildable"
-
-
+  def squareInGrid(pos: GridPos, gridd: GridPane) =
+    gridd.children.find(node => getRowIndex(node) == pos.y && getColumnIndex(node) == pos.x - 1).get.asInstanceOf[javafx.scene.layout.StackPane]
+//TODO: ask about java thing
   onKeyTyped = (ke: KeyEvent) =>
     ke.character.toLowerCase match
-      case r =>
-        if selectedTower.nonEmpty then
-          selectedTower.get.upgrade()
-          print("ok")
-
+      case r => /** REMOVE GUNS */
+        if selectedGridPos != GridPos(-1, -1) then
+          squareInGrid(selectedGridPos, gridMap).children(1).asInstanceOf[javafx.scene.image.ImageView].image = clearPlaceHolder
+          game.remove(selectedGridPos)
+          selectedGridPos = GridPos(-1, -1)
+          println(selectedGridPos)
+          println(game.gunTowerCollection)
+      case y => /** CLEAR GUN SELECTION */
+        selectedGridPos = GridPos(-1, -1)
+        selectedGunIndex = -1
+      case u => /** UPGRADE GUN */
 

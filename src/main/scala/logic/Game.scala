@@ -77,8 +77,9 @@ trait Game:
     if !square.isEmpty && square.tower.get.upgradePrice <= gold then
       square.tower.get.upgrade()
       gold -= square.tower.get.upgradePrice
-  def remove(x: Int, y: Int) =
-    map.elementAt(GridPos(x, y)).clear()
+  def remove(pos: GridPos) =
+    gunTowerCollection -= map.elementAt(pos).tower.get.asInstanceOf[GunTower]
+    map.elementAt(pos).clear()
 
   def use(ability: Ability) =
     if ability.price <= gold then
