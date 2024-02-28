@@ -4,6 +4,8 @@ import grid.*
 abstract class Map extends Grid[Square](32, 11):
   def startingSquare: GridPos
   def HQSquare: GridPos
+  def turningSquare: Vector[(Double, Double)]
+  def turningDirection: Vector[Int]
 end Map
 
 object Map1 extends Map:
@@ -13,14 +15,14 @@ object Map1 extends Map:
     val h2 = (x >= 5 && x <= 13)                                                  && (y == 8)
     val h3 = (x >= 8 && x <= 16)                                                  && (y == 2)
     val h4 = (x >= 18 && x <= 20)                                                 && (y == 6)
-    val v1   = (x == 4 || x == 14 || x == 27)                                       && (y >= 5 && y <= 7)
-    val v2   = (x == 7)                                                             && (y == 3)
-    val v3   = (x == 17)                                                            && (y >= 3 && y <= 5)
-    val v4   = (x == 21)                                                            && (y == 5)
-    val c1     = Vector((4, 4), (14, 4), (17, 2), (27, 4)).contains((x,y))
-    val c2     = Vector((4, 8), (7, 4), (17, 6)).contains((x,y))
-    val c3     = Vector((14, 8), (21, 6)).contains((x,y))
-    val c4     = Vector((7, 2), (21, 4)).contains((x,y))
+    val v1 = (x == 4 || x == 14 || x == 27)                                       && (y >= 5 && y <= 7)
+    val v2 = (x == 7)                                                             && (y == 3)
+    val v3 = (x == 17)                                                            && (y >= 3 && y <= 5)
+    val v4 = (x == 21)                                                            && (y == 5)
+    val c1 = Vector((4, 4), (14, 4), (17, 2), (27, 4)).contains((x,y))
+    val c2 = Vector((4, 8), (7, 4), (17, 6)).contains((x,y))
+    val c3 = Vector((14, 8), (21, 6)).contains((x,y))
+    val c4 = Vector((7, 2), (21, 4)).contains((x,y))
     val finalCondition = h1 || h2 || h3 || h4 || v1 || v2 || v3 || v4 || c1 || c2 || c3 || c4
     if finalCondition then
       result = Path()
@@ -36,7 +38,7 @@ object Map1 extends Map:
   }
   val startingSquare = GridPos(0, 4)
   val HQSquare = GridPos(17, 7)
-  val turningSquare = Vector(GridPos(4, 4), GridPos(4, 8), GridPos(8, 14), GridPos(14, 4), GridPos(4, 7), GridPos(7, 2), GridPos(2, 17), GridPos(17, 6), GridPos(6, 21), GridPos(21, 4), GridPos(4, 27))
+  val turningSquare = Vector((4, 4), (4, 8), (8, 14), (14, 4), (4, 7), (7, 2), (2, 17), (17, 6), (6, 21), (21, 4), (4, 27))
   val turningDirection = Vector(1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1)
   val turningVector = turningSquare.zip(turningDirection)
 

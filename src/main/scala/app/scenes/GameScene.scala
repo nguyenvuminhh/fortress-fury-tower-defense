@@ -6,7 +6,7 @@ import logic.grid.GridPos
 import logic.{EndlessGame, GunTower, Sharpshooter, Tower, Turret}
 import scalafx.scene.SceneIncludes.jfxNode2sfx
 import scalafx.application.JFXApp3
-import scalafx.beans.property.ObjectProperty
+import scalafx.beans.property.{ObjectProperty, StringProperty}
 import scalafx.geometry.Insets
 import scalafx.geometry.Pos.BaselineCenter
 import scalafx.scene.input.{KeyCode, KeyEvent}
@@ -17,8 +17,6 @@ import scalafx.scene.layout.{BorderPane, GridPane, HBox, StackPane, VBox}
 import scalafx.scene.paint.Color.{Blue, Red, Transparent}
 import scalafx.scene.shape.Rectangle
 import scalafx.scene.text.{Font, FontWeight, Text, TextFlow}
-import scalafx.beans.property.StringProperty
-import scalafx.scene.input.KeyEvent
 import scalafx.scene.layout.GridPane.{getColumnIndex, getRowIndex}
 import scalafx.delegate.SFXDelegate
 import scalafx.Includes.*
@@ -75,12 +73,12 @@ class GameScene (
       row <- 0 until rowNum
       col <- 0 until colNum
     do
+      val kind = squaretype(col + 1, row)
       val square = new StackPane:
         val squareImage = new ImageView:
           image =
-            val kind = squaretype(col + 1, row)
             if kind == "buildable" then
-              new Image("image/" + kind  +  ".png") //+ min(Random.nextInt(30)+1, 7).toString
+              new Image("image/" + kind + min(Random.nextInt(30)+1, 7).toString + ".png") //
             else new Image("image/" + kind +  ".png")
           fitHeight = squareside
           fitWidth = squareside
@@ -89,8 +87,7 @@ class GameScene (
           fitWidth = squareside*0.9
           image = clearPlaceHolder
 
-
-        val gridForEnemy = new GridPane:
+        val miniGrid = new GridPane:
           maxHeight = squareside
           maxWidth = squareside
           hgap = 0
@@ -99,24 +96,28 @@ class GameScene (
             miniRow <- 0 until 5
             miniCol <- 0 until 5
           do
-            val enemyImage = new ImageView:
-              image = if miniCol == 2 && miniRow == 2 then sqCannon else clearPlaceHolder
-              fitWidth = squareside
-              fitHeight = squareside
-              layoutY = squareside*3/5
-              layoutX = squareside*3/5
+            val globalPosition = globalPos(col, row, miniCol, miniRow)
+            val hasEnemy = game.enemyCollection.exists(enemy => enemy.x == globalPosition._1 && enemy.y == globalPosition._2)
+            def enemyImage =
+              if hasEnemy then
+                Image(game.enemyCollection.filter(enemy => enemy.x == globalPosition._1 && enemy.y == globalPosition._2).head.picturePath)
+              else Image("image/clearPlaceHolder.png")
+//TODO: Finish binding
+            val enemyImageView = new ImageView:
+              fitWidth = squareside-1
+              fitHeight = squareside-1
+            enemyImageView.image <== ObjectProperty[Image](enemyImage)
             val bg = new StackPane:
               maxHeight = squareside
               maxWidth = squareside
-              padding = Insets(-squareside*3/5)
-              children = Seq(enemyImage)
-
+              padding = Insets(-squareside*2/5)
+              children = Seq(enemyImageView)
             add(bg, miniCol, miniRow)
 
         children =
           squaretype(col+1, row) match
             case "buildable" => Seq(squareImage, gunImage)
-            case _ => Seq(squareImage, gunImage, gridForEnemy)
+            case _ => Seq(squareImage, gunImage, miniGrid)
         onMouseClicked = (event) =>
           if selectedGunIndex != -1 then
             val success = game.place(gunNameCollection(selectedGunIndex), col + 1, row)
@@ -240,7 +241,8 @@ class GameScene (
         selectedGunIndex = i
 }
   /** TIME CLOCK */
-  var elapsedTime: Long = 0
+  var timeInOneFifthSec: Long = 0
+  def elapsedTime: Long = timeInOneFifthSec/5
   var timerIsRunning: Boolean = true
   val timerText = new Text:
     style = "-fx-font-size: 20pt"
@@ -250,18 +252,18 @@ class GameScene (
     val minutes = (elapsedTime % 3600) / 60
     val seconds = elapsedTime % 60
     timerText.text = f"$hours%02d:$minutes%02d:$seconds%02d"
+    game.enemyCollection.foreach(_.advance())
     if elapsedTime%10 == 0 then
       game.giveGold()
       goldValueProperty.value = gold.toString
 
-
   def increaseTime(): Unit =
-    elapsedTime += 1
+    timeInOneFifthSec += 1
     updateTimerText()
 
   val timerThread = new Thread(() => {
     while timerIsRunning do
-      Thread.sleep(1000)
+      Thread.sleep(200)
       increaseTime()})
 
   timerThread.start()
@@ -293,6 +295,7 @@ class GameScene (
   val maincontainer = BorderPane(center, top, null, bottom, null)
   root = maincontainer
 
+  /** Helper methods */
   def squaretype(x: Int, y: Int) =
     val h1   = ((x >= 0 && x <= 3) || (x >= 8 && x <= 13) || (x >= 22 && x <= 26))  && (y == 4)
     val h2   = (x >= 5 && x <= 13)                                                  && (y == 8)
@@ -315,18 +318,29 @@ class GameScene (
     else "buildable"
   def squareInGrid(pos: GridPos, gridd: GridPane) =
     gridd.children.find(node => getRowIndex(node) == pos.y && getColumnIndex(node) == pos.x - 1).get.asInstanceOf[javafx.scene.layout.StackPane]
+  def globalPos(col: Int, row: Int, miniCol: Int, miniRow: Int) =
+    val x = col + 1.0 + 0.2 * miniCol
+    val y = row + 1.0 + 0.2 * miniRow
+    (x, y)
 //TODO: ask about java thing
   onKeyTyped = (ke: KeyEvent) =>
     ke.character.toLowerCase match
-      case r => /** REMOVE GUNS */
+      /** REMOVE GUNS */
+      case "r" =>
         if selectedGridPos != GridPos(-1, -1) then
           squareInGrid(selectedGridPos, gridMap).children(1).asInstanceOf[javafx.scene.image.ImageView].image = clearPlaceHolder
           game.remove(selectedGridPos)
           selectedGridPos = GridPos(-1, -1)
           println(selectedGridPos)
           println(game.gunTowerCollection)
-      case y => /** CLEAR GUN SELECTION */
+        else ()
+      /** CLEAR GUN SELECTION */
+      case "y" =>
         selectedGridPos = GridPos(-1, -1)
         selectedGunIndex = -1
-      case u => /** UPGRADE GUN */
+      /** UPGRADE GUN */
+      case "u" =>
+        game.deployWave(1)
+        println(game.enemyCollection)
+
 
