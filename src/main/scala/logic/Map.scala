@@ -38,7 +38,7 @@ object Map1 extends Map:
   }
   val startingSquare = GridPos(0, 4)
   val HQSquare = GridPos(17, 7)
-  val turningSquare = Vector((4, 4), (4, 8), (8, 14), (14, 4), (4, 7), (7, 2), (2, 17), (17, 6), (6, 21), (21, 4), (4, 27))
+  val turningSquare = Vector((4, 4), (4, 8), (14, 8), (14, 4), (7, 4), (7, 2), (17, 2), (17, 6), (21, 6), (21, 4), (27, 4))
   val turningDirection = Vector(1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1)
   val turningVector = turningSquare.zip(turningDirection)
 

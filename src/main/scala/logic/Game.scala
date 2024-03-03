@@ -2,6 +2,7 @@ package logic
 
 
 import logic.grid.GridPos
+import scala.math.{sqrt, pow}
 
 import java.util.{Timer, TimerTask}
 import scala.collection.mutable.Buffer
@@ -64,6 +65,7 @@ trait Game:
       gold -= gunTower.price
       true
     else false
+
   def getPrice(name: String) =
     name match
       case "Sharpshooter"     => 120
@@ -81,6 +83,12 @@ trait Game:
     gunTowerCollection -= map.elementAt(pos).tower.get.asInstanceOf[GunTower]
     map.elementAt(pos).clear()
 
+  /*def allShoot() =
+    gunTowerCollection.foreach(gun =>
+      val target = enemyCollection.find(es => distance(es.x, es.y, gun.getX, gun.getY) <= gun.range)
+      gun.shoot(target))*/
+      //TODO: make it wait
+
   def use(ability: Ability) =
     if ability.price <= gold then
       ability.use()
@@ -91,6 +99,9 @@ trait Game:
   def quit() = ???
   def restart() = ???
   def finish() = ???
+
+  def distance(x1: Double, y1: Double, x2: Double, y2: Double) =
+    sqrt(pow((x1-x2), 2) + pow((y1-y2), 2))
 
 end Game
 

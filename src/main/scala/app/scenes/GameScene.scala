@@ -3,7 +3,7 @@ package app.scenes
 import app.Scenes
 import app.FortressFuryGUI.stage
 import logic.grid.GridPos
-import logic.{EndlessGame, GunTower, Sharpshooter, Tower, Turret}
+import logic.{EndlessGame, GunTower, Infantry, Sharpshooter, Tower, Turret}
 import scalafx.scene.SceneIncludes.jfxNode2sfx
 import scalafx.application.JFXApp3
 import scalafx.beans.property.{ObjectProperty, StringProperty}
@@ -13,7 +13,7 @@ import scalafx.scene.input.{KeyCode, KeyEvent}
 import scalafx.scene.Scene
 import scalafx.scene.control.Label
 import scalafx.scene.image.{Image, ImageView}
-import scalafx.scene.layout.{BorderPane, GridPane, HBox, StackPane, VBox}
+import scalafx.scene.layout.{BorderPane, GridPane, HBox, Pane, StackPane, VBox}
 import scalafx.scene.paint.Color.{Blue, Red, Transparent}
 import scalafx.scene.shape.Rectangle
 import scalafx.scene.text.{Font, FontWeight, Text, TextFlow}
@@ -60,7 +60,6 @@ class GameScene (
   val clearPlaceHolder = Image("image/clearPlaceHolder.png")
 
 
-
   /** GRID */
   val gridMap = new GridPane():
     alignmentInParent = scalafx.geometry.Pos.Center
@@ -73,7 +72,7 @@ class GameScene (
       row <- 0 until rowNum
       col <- 0 until colNum
     do
-      val kind = squaretype(col + 1, row)
+      val kind = squaretype(col, row)
       val square = new StackPane:
         val squareImage = new ImageView:
           image =
@@ -82,53 +81,28 @@ class GameScene (
             else new Image("image/" + kind +  ".png")
           fitHeight = squareside
           fitWidth = squareside
+
         val gunImage = new ImageView:
           fitHeight = squareside*0.9
           fitWidth = squareside*0.9
           image = clearPlaceHolder
 
-        val miniGrid = new GridPane:
-          maxHeight = squareside
-          maxWidth = squareside
-          hgap = 0
-          vgap = 0
-          for
-            miniRow <- 0 until 5
-            miniCol <- 0 until 5
-          do
-            val globalPosition = globalPos(col, row, miniCol, miniRow)
-            val hasEnemy = game.enemyCollection.exists(enemy => enemy.x == globalPosition._1 && enemy.y == globalPosition._2)
-            def enemyImage =
-              if hasEnemy then
-                Image(game.enemyCollection.filter(enemy => enemy.x == globalPosition._1 && enemy.y == globalPosition._2).head.picturePath)
-              else Image("image/clearPlaceHolder.png")
-//TODO: Finish binding
-            val enemyImageView = new ImageView:
-              fitWidth = squareside-1
-              fitHeight = squareside-1
-            enemyImageView.image <== ObjectProperty[Image](enemyImage)
-            val bg = new StackPane:
-              maxHeight = squareside
-              maxWidth = squareside
-              padding = Insets(-squareside*2/5)
-              children = Seq(enemyImageView)
-            add(bg, miniCol, miniRow)
+        val enemyImage = new ImageView:
+          fitHeight = squareside*0.9
+          fitWidth = squareside*0.9
 
-        children =
-          squaretype(col+1, row) match
-            case "buildable" => Seq(squareImage, gunImage)
-            case _ => Seq(squareImage, gunImage, miniGrid)
+        children = Seq(squareImage, gunImage, enemyImage)
         onMouseClicked = (event) =>
           if selectedGunIndex != -1 then
-            val success = game.place(gunNameCollection(selectedGunIndex), col + 1, row)
+            val success = game.place(gunNameCollection(selectedGunIndex), col, row)
             if success then gunImage.image = Image("image/ci" + gunNameCollection(selectedGunIndex) + ".png")
             selectedGunIndex = -1
-          else if !game.map.elementAt(GridPos(col+1, row)).isEmpty && game.map.elementAt(GridPos(col+1, row)).isPlacable then
-          selectedGridPos = GridPos(col+1, row)
+          else if !game.map.elementAt(GridPos(col, row)).isEmpty && game.map.elementAt(GridPos(col, row)).isPlacable then
+          selectedGridPos = GridPos(col, row)
 
       add(square, col, row)
-
   val center = gridMap
+
 
 
   /** LEVEL WAVE TEXT */
@@ -252,8 +226,8 @@ class GameScene (
     val minutes = (elapsedTime % 3600) / 60
     val seconds = elapsedTime % 60
     timerText.text = f"$hours%02d:$minutes%02d:$seconds%02d"
-    game.enemyCollection.foreach(_.advance())
-    if elapsedTime%10 == 0 then
+    //game.enemyCollection.foreach(_.advance())
+    if timeInOneFifthSec%50 == 0 then
       game.giveGold()
       goldValueProperty.value = gold.toString
 
@@ -317,11 +291,17 @@ class GameScene (
     else if c4 then "corner4"
     else "buildable"
   def squareInGrid(pos: GridPos, gridd: GridPane) =
-    gridd.children.find(node => getRowIndex(node) == pos.y && getColumnIndex(node) == pos.x - 1).get.asInstanceOf[javafx.scene.layout.StackPane]
-  def globalPos(col: Int, row: Int, miniCol: Int, miniRow: Int) =
+    gridd.children.find(node => getRowIndex(node) == pos.y && getColumnIndex(node) == pos.x).get.asInstanceOf[javafx.scene.layout.StackPane]
+  def miniSquarePosToGridPos(col: Int, row: Int, miniCol: Int, miniRow: Int) =
     val x = col + 1.0 + 0.2 * miniCol
     val y = row + 1.0 + 0.2 * miniRow
     (x, y)
+  def gridPosToMiniSquarePos(x: Double, y: Double) =
+    val col = x.toInt - 1.0
+    val row = y.toInt - 1.0
+    val miniCol = (x - col*1.0)/0.2
+    val miniRow = (y - row*1.0)/0.2
+    (col, row, miniCol.toInt, miniRow.toInt)
 //TODO: ask about java thing
   onKeyTyped = (ke: KeyEvent) =>
     ke.character.toLowerCase match
@@ -340,7 +320,9 @@ class GameScene (
         selectedGunIndex = -1
       /** UPGRADE GUN */
       case "u" =>
-        game.deployWave(1)
+        game.deploy(Infantry(game))
         println(game.enemyCollection)
-
+      case "t" =>
+        game.enemyCollection.foreach(enemy => enemy.advance())
+        println(game.enemyCollection)
 

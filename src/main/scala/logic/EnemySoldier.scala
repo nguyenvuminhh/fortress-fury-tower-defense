@@ -1,6 +1,10 @@
 package logic
 
-import scala.math.{sin, cos, Pi}
+import logic.grid.CompassDir.*
+
+import scala.math.{Pi, cos, round, sin}
+import scala.math.BigDecimal.RoundingMode
+
 
 
 abstract class EnemySoldier(game: Game, damage: Int):
@@ -13,17 +17,17 @@ abstract class EnemySoldier(game: Game, damage: Int):
   /** Position */
   var x = game.map.startingSquare.x*1.0
   var y = game.map.startingSquare.y*1.0
-  var pace = 0.2
-  var heading = 0.0
+  var pace = 1
+  var heading = East
   def advance() =
     turnDirection match
       case 1 => turnRight()
       case 0 => turnLeft()
       case -1 => ()
-    x += cos(heading).toInt*pace
-    y += sin(heading).toInt*pace
-  def turnRight() = heading -= Pi/2
-  def turnLeft() = heading += Pi/2
+    x = BigDecimal(x +heading.xStep*pace).setScale(1, BigDecimal.RoundingMode.HALF_UP).toDouble
+    y = BigDecimal(y +heading.yStep*pace).setScale(1, BigDecimal.RoundingMode.HALF_UP).toDouble
+  def turnRight() = heading = heading.clockwise
+  def turnLeft() = heading = heading.counterClockwise
   def picturePath: String
   def turnDirection =
     val index = game.map.turningSquare.indexOf((x,y))
@@ -33,17 +37,21 @@ abstract class EnemySoldier(game: Game, damage: Int):
 
 case class Infantry(game: Game) extends EnemySoldier(game, 100):
   val picturePath = "image/infantry.png"
+  override def toString = s"Infantry($x, $y)"
 end Infantry
 
 case class Cavalry(game: Game) extends EnemySoldier(game, 100):
   val picturePath = "image/calvary.png"
+  override def toString = s"Cavalry($x, $y)"
 end Cavalry
 
 case class ArmoredCar(game: Game) extends EnemySoldier(game, 100):
   val picturePath = "image/armoredCar.png"
+  override def toString = s"ArmoredCar($x, $y)"
 end ArmoredCar
 
 case class Tank(game: Game) extends EnemySoldier(game, 100):
   val picturePath = "image/tank.png"
+  override def toString = s"Tank($x, $y)"
 end Tank
 

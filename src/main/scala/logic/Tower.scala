@@ -19,7 +19,9 @@ case class Headquarter(x: Double, y: Double) extends Tower:
     HP = (HP * 0.05).toInt
     goldPer10s = (goldPer10s * 0.05).toInt
 
-class GunTower(x: Int, y: Int, var damage: Int, var fireRate: Double, range: Double, val price: Int) extends Tower:
+class GunTower(x: Int, y: Int, var damage: Int, var fireRate: Double, val range: Double, val price: Int) extends Tower:
+  val getX = x
+  val getY = y
   private var level = 1
   private var moneySpent = price
   def upgradePrice = (price/15.0).toInt * 10
@@ -30,9 +32,9 @@ class GunTower(x: Int, y: Int, var damage: Int, var fireRate: Double, range: Dou
     fireRate = fireRate * 0.05
     damage = (damage * 0.05).toInt
 
-
   def shoot(target: EnemySoldier) =
     target.minusHP(damage)
+    
 
 case class Cannon(x: Int, y: Int) extends GunTower(x, y, 50, 1.0, 1.5, 150):
 
