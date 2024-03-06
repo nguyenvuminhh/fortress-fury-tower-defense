@@ -11,55 +11,35 @@ trait Game:
   def map: Map
 
   private var score = 0
-  def yieldScore = score
+  def getScore = score
 
   private var gold = 50000
-  def yieldGold = gold
+  def getGold = gold
 
   private var wave = 0
-  def yieldWave = wave
+  def getWave = wave
 
   val headquarter = Headquarter(map.HQSquare.x+0, map.HQSquare.y+0)
-  var gunTowerCollection = Buffer[GunTower]()
-  var enemyCollection = Buffer[EnemySoldier]()
-  /** Deploy methods */
+  private var gunTowerCollection = Buffer[GunTower]()
+  def gunTowers = gunTowerCollection
+
+  private var enemyCollection = Buffer[EnemySoldier]()
+  def enemies = enemyCollection
+  def filterDeadEnemy() = enemyCollection = enemyCollection.filter(_.getHP > 0)
+
   def deploy(enemy: EnemySoldier) =
     enemyCollection += enemy
-  def unit(amount: Int, unitType: Int): Vector[EnemySoldier] =
-    Vector.tabulate(amount){i =>
-      unitType match
-        case 1 => Infantry(this)
-        case 2 => Cavalry(this)
-        case 3 => ArmoredCar(this)
-        case 4 => Tank(this)
-    }
-  def deployWave(wave: Int) =
-    def a = wave / 5
-    def b = wave / 4
-    def c = wave / 3 + 5
-    def d = wave / 2 + 10
-    val troops = unit(a, 4) ++ unit(b, 3) ++ unit(c, 2) ++ unit(d, 1)
-    val timer = new Timer()
-    var index = 0
-    val task = new TimerTask:
-      def run() =
-        if index < troops.length then
-          deploy(troops(index))
-          index += 1
-        else
-          timer.cancel()
-    timer.schedule(task, 0, 1000)
 
   def place(gunTowerType: String, x: Int, y: Int) =
     if getPrice(gunTowerType) <= gold && map.elementAt(GridPos(x, y)).isEmpty then
       val gunTower =
         gunTowerType match
-          case "Sharpshooter"     => Sharpshooter(x, y)
-          case "Cannon"           => Cannon(x, y)
-          case "Turret"           => Turret(x, y)
-          case "GrenadeLauncher"  => GrenadeLauncher(x, y)
-          case "Sniper"           => Sniper(x, y)
-          case "RocketLauncher"   => RocketLauncher(x, y)
+          case "Sharpshooter"     => Sharpshooter(x, y, this)
+          case "Cannon"           => Cannon(x, y, this)
+          case "Turret"           => Turret(x, y, this)
+          case "GrenadeLauncher"  => GrenadeLauncher(x, y, this)
+          case "Sniper"           => Sniper(x, y, this)
+          case "RocketLauncher"   => RocketLauncher(x, y, this)
       map.elementAt(GridPos(x, y)).addTower(gunTower)
       gunTowerCollection += gunTower
       gold -= gunTower.price
@@ -80,28 +60,22 @@ trait Game:
       square.tower.get.upgrade()
       gold -= square.tower.get.upgradePrice
   def remove(pos: GridPos) =
+    gold -= (this.headquarter.getGoldBackRate* map.elementAt(pos).tower.get.asInstanceOf[GunTower].price).toInt
     gunTowerCollection -= map.elementAt(pos).tower.get.asInstanceOf[GunTower]
     map.elementAt(pos).clear()
-
-  /*def allShoot() =
-    gunTowerCollection.foreach(gun =>
-      val target = enemyCollection.find(es => distance(es.x, es.y, gun.getX, gun.getY) <= gun.range)
-      gun.shoot(target))*/
-      //TODO: make it wait
 
   def use(ability: Ability) =
     if ability.price <= gold then
       ability.use()
       gold -= ability.price
-  def giveGold() = gold += headquarter.goldPer10s
+  def giveGold() = gold += headquarter.getGoldPer10s
   def pause() = ???
   def resume() = ???
   def quit() = ???
   def restart() = ???
   def finish() = ???
 
-  def distance(x1: Double, y1: Double, x2: Double, y2: Double) =
-    sqrt(pow((x1-x2), 2) + pow((y1-y2), 2))
+
 
 end Game
 

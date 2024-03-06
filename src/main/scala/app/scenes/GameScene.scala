@@ -3,10 +3,10 @@ package app.scenes
 import app.Scenes
 import app.FortressFuryGUI.stage
 import logic.grid.GridPos
-import logic.{EndlessGame, GunTower, Infantry, Sharpshooter, Tower, Turret}
+import logic.{ArmoredCar, Cavalry, EndlessGame, EnemySoldier, GunTower, Infantry, Sharpshooter, Tank, Tower, Turret}
 import scalafx.scene.SceneIncludes.jfxNode2sfx
-import scalafx.application.JFXApp3
-import scalafx.beans.property.{ObjectProperty, StringProperty}
+import scalafx.application.{JFXApp3, Platform}
+import scalafx.beans.property.{DoubleProperty, ObjectProperty, StringProperty}
 import scalafx.geometry.Insets
 import scalafx.geometry.Pos.BaselineCenter
 import scalafx.scene.input.{KeyCode, KeyEvent}
@@ -21,6 +21,7 @@ import scalafx.scene.layout.GridPane.{getColumnIndex, getRowIndex}
 import scalafx.delegate.SFXDelegate
 import scalafx.Includes.*
 
+import java.util.{Timer, TimerTask}
 import java.util.concurrent.{Executors, TimeUnit}
 import scala.math.min
 import scala.util.Random
@@ -43,10 +44,10 @@ class GameScene (
   var selectedGridPos = GridPos(-1, -1)
   /** Game Variables */
   val level = 1
-  def wave = game.yieldWave
-  def gold = game.yieldGold
-  def score = game.yieldScore
-  def HP = game.headquarter.HP.toString + "/" + game.headquarter.maxHP.toString
+  def wave = game.getWave
+  def gold = game.getGold
+  def score = game.getScore
+  def HP = game.headquarter.getHP.toString + "/" + game.headquarter.maxHP.toString
   val gunPrice = Vector(120, 150, 200, 250, 300, 500)
 
   /** Picture Variables */
@@ -77,7 +78,7 @@ class GameScene (
         val squareImage = new ImageView:
           image =
             if kind == "buildable" then
-              new Image("image/" + kind + min(Random.nextInt(30)+1, 7).toString + ".png") //
+              new Image("image/" + kind + min(Random.nextInt(30)+1, 7).toString + ".png")
             else new Image("image/" + kind +  ".png")
           fitHeight = squareside
           fitWidth = squareside
@@ -87,32 +88,43 @@ class GameScene (
           fitWidth = squareside*0.9
           image = clearPlaceHolder
 
-        val enemyImage = new ImageView:
-          fitHeight = squareside*0.9
-          fitWidth = squareside*0.9
 
-        children = Seq(squareImage, gunImage, enemyImage)
+
+
+        children = Seq(squareImage, gunImage)
         onMouseClicked = (event) =>
           if selectedGunIndex != -1 then
             val success = game.place(gunNameCollection(selectedGunIndex), col, row)
-            if success then gunImage.image = Image("image/ci" + gunNameCollection(selectedGunIndex) + ".png")
+            if success then
+              gunImage.image = Image("image/ci" + gunNameCollection(selectedGunIndex) + ".png")
+              gunImage.rotate <== DoubleProperty(game.map.elementAt(GridPos(col, row)).tower.get.asInstanceOf[GunTower].rotationAngle)
+              updateGold()
             selectedGunIndex = -1
           else if !game.map.elementAt(GridPos(col, row)).isEmpty && game.map.elementAt(GridPos(col, row)).isPlacable then
           selectedGridPos = GridPos(col, row)
 
       add(square, col, row)
-  val center = gridMap
+  val paneForEnemy = new Pane:
+    maxWidth <== gridMap.maxWidth
+    maxHeight <== gridMap.maxHeight
+
+  paneForEnemy.setMouseTransparent(true)
+
+//TODO: Mapping
+  val center = new StackPane:
+    children = Seq(gridMap, paneForEnemy)
 
 
 
   /** LEVEL WAVE TEXT */
-  val levelWaveValueProperty = StringProperty(wave.toString)
+  val levelWaveValueProperty = StringProperty("Wave " + wave.toString)
   val levelWaveLabel = new Text:
     font = Font.font("Arial", FontWeight.Bold, null, 20)
   levelWaveLabel.text <== levelWaveValueProperty
 
   /** GOLD TEXT */
   val goldValueProperty = StringProperty(gold.toString)
+  def updateGold() = goldValueProperty.value = gold.toString
   val goldText = new TextFlow:
     val goldLabel = new Text:
       text = "Gold: "
@@ -226,10 +238,16 @@ class GameScene (
     val minutes = (elapsedTime % 3600) / 60
     val seconds = elapsedTime % 60
     timerText.text = f"$hours%02d:$minutes%02d:$seconds%02d"
-    //game.enemyCollection.foreach(_.advance())
+    game.enemies.foreach(_.advance())
+    game.gunTowers.foreach(_.shoot())
+    game.enemies.foreach(enemy =>
+      if enemy.isDead then
+        Platform.runLater(() -> {paneForEnemy.children -= enemy.imageView}))
+    game.filterDeadEnemy()
+
     if timeInOneFifthSec%50 == 0 then
       game.giveGold()
-      goldValueProperty.value = gold.toString
+      updateGold()
 
   def increaseTime(): Unit =
     timeInOneFifthSec += 1
@@ -302,6 +320,36 @@ class GameScene (
     val miniCol = (x - col*1.0)/0.2
     val miniRow = (y - row*1.0)/0.2
     (col, row, miniCol.toInt, miniRow.toInt)
+  def unit(amount: Int, unitType: Int): Vector[EnemySoldier] =
+    Vector.tabulate(amount){i =>
+      unitType match
+        case 1 => Infantry(game)
+        case 2 => Cavalry(game)
+        case 3 => ArmoredCar(game)
+        case 4 => Tank(game)}
+  def deployWave(wave: Int) =
+    def a = wave / 5
+    def b = wave / 4
+    def c = wave / 3 + 5
+    def d = wave / 2 + 10
+    val troops = unit(a, 4) ++ unit(b, 3) ++ unit(c, 2) ++ unit(d, 1)
+    val timer = new Timer()
+    var index = 0
+    val task = new TimerTask:
+      def run() =
+        if index < troops.length then
+          val enemy = troops(index)
+          game.deploy(troops(index))
+
+          Platform.runLater(() -> {
+            enemy.enemyImage.image = Image(enemy.picturePath)
+            //enemy.imageView.center.asInstanceOf[ObjectProperty[javafx.scene.image.ImageView]].value.image = Image(enemy.picturePath)
+            paneForEnemy.children += enemy.imageView})
+          index += 1
+
+        else
+          timer.cancel()
+    timer.schedule(task, 0, 1000)
 //TODO: ask about java thing
   onKeyTyped = (ke: KeyEvent) =>
     ke.character.toLowerCase match
@@ -311,8 +359,7 @@ class GameScene (
           squareInGrid(selectedGridPos, gridMap).children(1).asInstanceOf[javafx.scene.image.ImageView].image = clearPlaceHolder
           game.remove(selectedGridPos)
           selectedGridPos = GridPos(-1, -1)
-          println(selectedGridPos)
-          println(game.gunTowerCollection)
+          updateGold()
         else ()
       /** CLEAR GUN SELECTION */
       case "y" =>
@@ -320,9 +367,7 @@ class GameScene (
         selectedGunIndex = -1
       /** UPGRADE GUN */
       case "u" =>
-        game.deploy(Infantry(game))
-        println(game.enemyCollection)
-      case "t" =>
-        game.enemyCollection.foreach(enemy => enemy.advance())
-        println(game.enemyCollection)
+        deployWave(1)
+
+
 
