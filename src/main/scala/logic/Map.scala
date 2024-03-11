@@ -4,11 +4,14 @@ import grid.*
 abstract class Map extends Grid[Square](32, 11):
   def startingSquare: GridPos
   def HQSquare: GridPos
+  def crashSquare: GridPos
   def turningSquare: Vector[(Double, Double)]
   def turningDirection: Vector[Int]
 end Map
 
 object Map1 extends Map:
+  
+  /** CONDITION OF THE PATH */
   private def initialSquare(x: Int, y: Int): Square =
     var result: Square = Path()
     val h1 = ((x >= 0 && x <= 3) || (x >= 8 && x <= 13) || (x >= 22 && x <= 26))  && (y == 4)
@@ -29,6 +32,7 @@ object Map1 extends Map:
     else result = Buildable()
     result
 
+  /** PLACING THE SQUARES */
   def initialElements: Seq[Square] = {
     val elements = for {
       y <- 0 until height
@@ -36,8 +40,11 @@ object Map1 extends Map:
     } yield initialSquare(x, y)
     elements.toSeq
   }
+  
+  /** SPECIAL SQUARES */
   val startingSquare = GridPos(0, 4)
-  val HQSquare = GridPos(17, 7)
+  val crashSquare = GridPos(27, 7)
+  val HQSquare = GridPos(27, 8)
   val turningSquare = Vector((4, 4), (4, 8), (14, 8), (14, 4), (7, 4), (7, 2), (17, 2), (17, 6), (21, 6), (21, 4), (27, 4))
   val turningDirection = Vector(1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1)
   val turningVector = turningSquare.zip(turningDirection)

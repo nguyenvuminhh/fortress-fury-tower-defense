@@ -9,24 +9,35 @@ PLAN:
 Sprint 2: 04.03.24
 
   Done:
-    - GUI: made enemy runs smoothly, remove dead enemy image view
-    - logic: 
+    - GUI:
+      + made enemy runs smoothly, remove dead enemy image view
+      + added infoBox
+      + Lobby Scene
+      + Headquarter
+    - logic:
+      + make enemy crash, which reduce HQ's HP
+      + can control game speed
+      + can save game record for leader board after game end
+
 
   Tested function:
-    + shoot()
-    + advance() with gui part
-    + filterDeadEnemy() with gui part
+    + speedup()
+    + pause()
+    + resume()
+    + crash()
+    + saveRecord()
 
   Difficulties:
-    - Need to make enemy run smoothly (1/5 square/step): resolve
+    - Need to make enemy run smoothly (1/5 square/step): resolved
       + tried to place a 5x5 grid on every square
       + tried to place a grid that have 25 times as many square but have the same size as the main grid
       + tried to place a pane and use cordinate to translate the image. There was a bit of inaccuracy in the placement, but I measured the inaccuracy for every blocks and created a constant to adjust.
-    - Need to find a way to make the gun shoot at different rate: not yet resolve
+    - Need to find a way to make the gun shoot at different rate: resolved
       + tried to use timer
       + tried using Thread (it worked)
+    - glitch
 
-  Time Spent: 5h
+  Time Spent: 10h
 
   Schedule: 
   
