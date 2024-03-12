@@ -42,9 +42,9 @@ class Game (val map: Map):
   val isOver = BooleanProperty(false)
   def getIsOver = isOver.value || headquarter.getHP == 0
   def quit() = isOver.value = true
-  private var survivingTimeInOneFifthSec: Long = 0
 
   /** TIME */
+  private var survivingTimeInOneFifthSec: Long = 0
   def getSurvivingTimeInOneFifthSec = survivingTimeInOneFifthSec
   def increaseTime() = survivingTimeInOneFifthSec += 1
   def survivingTimeToString =
@@ -112,10 +112,31 @@ class Game (val map: Map):
     map.elementAt(pos).clear()
 
   /** ABILITY METHOD */
-  def use(ability: Ability) =
-    if ability.price <= gold then
-      ability.use()
-      gold -= ability.price
+  val abilityPrice = 750
+  //RAGE
+  private var rageEndTime = 0.0
+  def getRageEndTime = rageEndTime
+  def rage =
+    if gold >= abilityPrice then
+      gold -= abilityPrice
+      gunTowers.foreach(gun => gun.rage)
+      rageEndTime = survivingTimeInOneFifthSec + 15*5
+  def derage =
+    gunTowers.foreach(gun => gun.derage)
+    rageEndTime = 0
+  //FREEZE
+  private var freezeEndTime = 0.0
+  def getFreezeEndTime = rageEndTime
+  def freeze =
+    if gold >= abilityPrice then
+      gold -= abilityPrice
+      freezeEndTime = survivingTimeInOneFifthSec + 15*5
+  def defrost =
+    freezeEndTime = 0
+  //POISON
+  def poison = enemies.foreach(enemy => enemy.minusHP((enemy.getHP*1.0/2).toInt))
+
+
 
   /** SAVE GAME */
   def saveRecord(): Unit =

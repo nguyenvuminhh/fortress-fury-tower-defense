@@ -7,7 +7,7 @@ abstract class Ability(game: Game):
 end Ability
 
 class Rage(game: Game) extends Ability(game):
-  def use() = ???
+  def use() = game.rage
     
 end Rage
 

@@ -18,6 +18,7 @@ Sprint 2: 04.03.24
       + make enemy crash, which reduce HQ's HP
       + can control game speed
       + can save game record for leader board after game end
+      + omit class ability. Implemented it in game
 
 
   Tested function:
@@ -66,6 +67,7 @@ Sprint 1: 04.03.24
 
   Schedule: logic is a bit behind, GUI is a lot a head. Can say the project is on schedule
 
+  Goal: resolve all conflict
 
 
 

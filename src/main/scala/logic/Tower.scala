@@ -1,5 +1,7 @@
 package logic
 import scalafx.beans.property.DoubleProperty
+import scalafx.geometry.Insets
+import scalafx.scene.control.Label
 import scalafx.scene.layout.{HBox, StackPane, VBox}
 import scalafx.scene.paint.Color.Blue
 import scalafx.scene.shape.Rectangle
@@ -44,7 +46,13 @@ case class Headquarter(x: Double, y: Double) extends Tower:
     goldPer10s = (goldPer10s * 0.05).toInt
 
 
-class GunTower(name: String, x: Int, y: Int, var damage: Int, var fireRate: Double, val range: Double, val price: Int, game: Game) extends Tower:
+class GunTower(name: String, x: Int, y: Int, var damage: Int, var fireRate: Double, var range: Double, val price: Int, game: Game) extends Tower:
+  /** STATISTIC */
+  private var rageConst = 1.0
+  def getDamage = (damage*rageConst).toInt
+  def getFireRate = fireRate*1.0/rageConst
+  def getRange = range*rageConst
+
   /** GET LOCATION */
   val getX = x
   val getY = y
@@ -67,22 +75,26 @@ class GunTower(name: String, x: Int, y: Int, var damage: Int, var fireRate: Doub
 
   /** SHOOT METHODS */
   var onCoolDown = false
-  def target: Option[EnemySoldier] = game.enemies.find(enemy => distanceTo(enemy) <= range)
+  def target: Option[EnemySoldier] = game.enemies.find(enemy => distanceTo(enemy) <= getRange)
 
   def shoot() =
     if !onCoolDown && target.nonEmpty then
       val startTime = System.currentTimeMillis()
-      target.get.minusHP(damage)
+      target.get.minusHP(getDamage)
       onCoolDown = true
       target.get.widthProperty.value = (50*(target.get.HPpercentage))
       updateRotationAngle
       Future {
-        Thread.sleep(((fireRate*100)/game.pace).toLong)
+        Thread.sleep(((getFireRate*100)/game.pace).toLong)
         onCoolDown = false}
 
   def distanceTo(enemy: EnemySoldier) =
     sqrt(pow((x-enemy.getX), 2) + pow((y-enemy.getY), 2))
 
+  /** ABILITY */
+  def rage = rageConst = 1.15
+  def derage = rageConst = 1
+  /** UI */
   def description =
     val stats = Seq("Level: " -> level, "Upgrade Price: " -> upgradePrice,
       "Damage: " -> damage, "Firerate: " -> fireRate, "Range: " -> range, "Price: " -> price)
@@ -95,7 +107,9 @@ class GunTower(name: String, x: Int, y: Int, var damage: Int, var fireRate: Doub
         children = Seq(statText, valueText)
     )
     val info = new VBox:
-      val heading = Text(name)
+      //alignment = scalafx.geometry.Pos.Center
+      padding = Insets(0, 20, 0, 20)
+      val heading = new Label(s"$name ($getX, $getY)")
       heading.style = s"-fx-font-size: 20px; -fx-font-weight: bold;"
       heading.textAlignment = Center
       val content = new HBox:
@@ -109,8 +123,10 @@ class GunTower(name: String, x: Int, y: Int, var damage: Int, var fireRate: Doub
 
       spacing = 20 //TODO: edit spacing, alignment
     val bg = new Rectangle:
-      width = 250
+      width = 300
       height = 130
+      arcWidth = 10
+      arcHeight = 10
       fill = Blue
     Seq(bg, info)
 

@@ -14,7 +14,7 @@ import scalafx.scene.Scene
 import scalafx.scene.control.Label
 import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.layout.{BorderPane, GridPane, HBox, Pane, StackPane, VBox}
-import scalafx.scene.paint.Color.{Blue, Red, Transparent}
+import scalafx.scene.paint.Color.{Blue, Green, Red, Transparent}
 import scalafx.scene.shape.Rectangle
 import scalafx.scene.text.{Font, FontWeight, Text, TextFlow}
 import scalafx.scene.layout.GridPane.{getColumnIndex, getRowIndex}
@@ -32,7 +32,6 @@ class GameScene (
     mainStage: JFXApp3.PrimaryStage,
     selectedScene: ObjectProperty[Scenes],
 ) extends Scene:
-
   val game = Game(logic.Map1)
 
   /** UI Variables */
@@ -61,6 +60,10 @@ class GameScene (
   val sqGrenadeLauncher = Image("image/sqGrenadeLauncher.png")
   val sqRocketLauncher = Image("image/sqRocketLauncher.png")
   val sqGunCollection = Vector(sqSharpshooter, sqCannon, sqTurret, sqGrenadeLauncher, sqSniper, sqRocketLauncher)
+  val poisonPic = Image("image/poison.png")
+  val freezePic = Image("image/freeze.png")
+  val ragePic = Image("image/rage.png")
+  val abilityCollection = Vector(poisonPic, freezePic, ragePic)
   val clearPlaceHolder = Image("image/clearPlaceHolder.png")
 
   /** GRID */
@@ -121,7 +124,7 @@ class GameScene (
             selectedGridPos = GridPos(col, row)
             val tower = game.map.elementAt(selectedGridPos).tower.get
             tower match
-              case tower1: GunTower => infoBox.children = tower1.description
+              case tower1: GunTower => bottomCenter.children = tower1.description
               case _ =>
       add(square, col, row)
 
@@ -206,55 +209,9 @@ class GameScene (
     onMouseClicked = (event) =>
       game.speedup()
 
-  /** INFO BOX */
 
-  private var infoBox = new StackPane
 
-  /** GUN BUTTONS */
-  val btWidth = 100
-  val btHeight = 130
-  val gunButtonsArray = Array.tabulate(6) { i =>
-    val bg = new Rectangle:
-      width = btWidth
-      height = btHeight
-      arcWidth = 20
-      arcHeight = 20
-      fill = Red
-    val gunPicture = new StackPane:
-      val pictureBg = new Rectangle:
-        width = btWidth*4/5
-        height = btWidth*4/5
-        arcWidth = 20
-        arcHeight = 20
-        fill = Transparent
-        padding = Insets(btWidth/15, 0, 0, 0)
-      val pictureContent = new ImageView:
-        fitWidth = btWidth*4/5
-        fitHeight = btWidth*4/5
-        image = sqGunCollection(i)
-      children = Seq(pictureBg, pictureContent)
 
-    val priceLabel = Label(s"${gunPrice(i)}")
-    priceLabel.font = Font.font("Arial", FontWeight.Bold, null, 20)
-
-    val contentOfButton = new VBox:
-      alignment = BaselineCenter
-      children = Array(gunPicture, priceLabel)
-      padding = Insets(btWidth/15, 0, 0, 0)
-
-    new StackPane:
-      maxHeight = btHeight
-      children += bg
-      children += contentOfButton
-      alignment = scalafx.geometry.Pos.Center
-      onMouseClicked = (event) =>
-        selectedGunIndex = i
-}
-  val gunButtons = new HBox:
-    children = gunButtonsArray
-    spacing = 10
-    padding = Insets(0, 70, 10, 0)
-    alignment = scalafx.geometry.Pos.Center
 
   /** TIME CLOCK */
   def elapsedTime: Long = game.getSurvivingTimeInOneFifthSec/5
@@ -274,11 +231,12 @@ class GameScene (
       game.giveGold()
       updateGold()
     //ADVANCE THE ENEMY
-    game.enemies.foreach(enemy =>
-      if enemy.getX == game.map.crashSquare.x && enemy.getY == game.map.crashSquare.y then
-        enemy.crash()
-        widthPropertyOfHQHP.value = 50*game.headquarter.HPpercentage
-      else enemy.advance())
+    if game.getFreezeEndTime == 0 then
+      game.enemies.foreach(enemy =>
+        if enemy.getX == game.map.crashSquare.x && enemy.getY == game.map.crashSquare.y then
+          enemy.crash()
+          widthPropertyOfHQHP.value = 50*game.headquarter.HPpercentage
+        else enemy.advance())
     //FILTER DEAD ENEMY
     game.enemies.foreach(enemy =>
       if enemy.isDead then
@@ -295,6 +253,10 @@ class GameScene (
       toBeDeployed = toBeDeployed.drop(1)
     //SHOOT
     game.gunTowers.foreach(_.shoot())
+    //END ABILITY
+    if game.getSurvivingTimeInOneFifthSec == game.getRageEndTime.toLong then game.derage
+    if game.getSurvivingTimeInOneFifthSec == game.getFreezeEndTime.toLong then game.defrost
+
 
 
   def increaseTime(): Unit =
@@ -307,6 +269,78 @@ class GameScene (
       Thread.sleep((200*1.0/game.pace).toLong)
       increaseTime())
   timerThread.start()
+
+
+  /** ABILITIES */
+  val btWidth = 100
+  val btHeight = 130
+  val abilityButtonArray = Array.tabulate(3) { i =>
+    val bg = new Rectangle:
+      width = btWidth
+      height = btHeight
+      arcWidth = 20
+      arcHeight = 20
+      fill = Red
+    val abilityPicture = new StackPane:
+      val abilityPictureContent = new ImageView:
+        fitWidth = btWidth*4/5
+        fitHeight = btWidth*4/5
+        image = abilityCollection(i)
+        padding = Insets(btWidth/15, 0, 0, 0)
+      children += abilityPictureContent
+
+    val priceLabel = Label(game.abilityPrice.toString)
+    priceLabel.font = Font.font("Arial", FontWeight.Bold, null, 20)
+
+    val contentOfButton = new VBox:
+      alignment = BaselineCenter
+      children = Array(abilityPicture, priceLabel)
+      padding = Insets(btWidth/15, 0, 0, 0)
+
+    new StackPane:
+      maxHeight = btHeight
+      children = Seq(bg, contentOfButton)
+      alignment = scalafx.geometry.Pos.Center
+      onMouseClicked = (event) =>
+        selectedGunIndex = i
+}
+
+
+
+
+
+  /** GUN BUTTONS */
+  val gunButtonsArray = Array.tabulate(6) { i =>
+    val bg = new Rectangle:
+      width = btWidth
+      height = btHeight
+      arcWidth = 20
+      arcHeight = 20
+      fill = Red
+    val gunPicture = new StackPane:
+      val gunPictureContent = new ImageView:
+        fitWidth = btWidth*4/5
+        fitHeight = btWidth*4/5
+        image = sqGunCollection(i)
+        padding = Insets(btWidth/15, 0, 0, 0)
+      children += gunPictureContent
+
+    val priceLabel = Label(s"${gunPrice(i)}")
+    priceLabel.font = Font.font("Arial", FontWeight.Bold, null, 20)
+
+    val contentOfButton = new VBox:
+      alignment = BaselineCenter
+      children = Array(gunPicture, priceLabel)
+      padding = Insets(btWidth/15, 0, 0, 0)
+
+    new StackPane:
+      maxHeight = btHeight
+      children = Seq(bg, contentOfButton)
+      alignment = scalafx.geometry.Pos.Center
+      onMouseClicked = (event) =>
+        selectedGunIndex = i
+}
+
 
   /** Center */
   val center = new StackPane:
@@ -327,16 +361,32 @@ class GameScene (
     padding = Insets(0, 70, 0, 0)
     spacing = 10
   val top = new BorderPane(topcenter, null, topright, null, topleft):
-    padding = Insets(0, 0, 15, 0)
+    padding = Insets(0, 0, 10, 0)
 
   /** Bottom */
-  val bottom = new BorderPane(null, null, gunButtons, null, infoBox)
+  val bottomRight = new HBox:
+    children = gunButtonsArray
+    spacing = 10
+    padding = Insets(0, 70, 10, 0)
+    alignment = scalafx.geometry.Pos.Center
+  val bottomLeft = new HBox:
+    children = abilityButtonArray
+    spacing = 10
+    padding = Insets(0, 0 , 10, 15)
+    alignment = scalafx.geometry.Pos.Center
+  private var bottomCenter = new StackPane:
+    alignment = scalafx.geometry.Pos.Center
+    padding = Insets(0, 0 , 10, 0)
+    maxHeight = 130
+    maxWidth = 300
+  val bottom = new BorderPane(bottomCenter, null, bottomRight, null, bottomLeft)
 
 
 
   /** Root */
   val maincontainer = BorderPane(center, top, null, bottom, null)
   root = maincontainer
+  root.value.style = "-fx-background-color: #C3E66C;"
 
   /** Helper methods */
   def squaretype(x: Int, y: Int) =
