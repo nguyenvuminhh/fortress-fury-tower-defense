@@ -24,12 +24,14 @@ class Game (val map: Map):
   def addScore(amount: Int) = score += amount
 
   /** GOLD */
-  private var gold = 50000
+  private var gold = 10000
   def getGold = gold
   def giveGold() = gold += headquarter.getGoldPer10s
+  def addGold(amount: Int) = gold += amount
 
   /** WAVE */
   private var wave = 0
+  def nextWave = wave += 1//TODO: Ask if this is necessary
   def getWave = wave
 
   /** PAUSE */
@@ -40,7 +42,7 @@ class Game (val map: Map):
 
   /** GAMEOVER */
   val isOver = BooleanProperty(false)
-  def getIsOver = isOver.value || headquarter.getHP == 0
+  def getIsOver = isOver.value || headquarter.getHP <= 0
   def quit() = isOver.value = true
 
   /** TIME */
@@ -62,8 +64,10 @@ class Game (val map: Map):
 
   /** TOWERS */
   val headquarter = Headquarter(map.HQSquare.x, map.HQSquare.y)
+  map.elementAt(map.HQSquare).addTower(headquarter)
   private var gunTowerCollection = Buffer[GunTower]()
   def gunTowers = gunTowerCollection
+  val infoGunTowers = Vector[GunTower](Sharpshooter(-1, -1, this), Cannon(-1, -1, this), Turret(-1, -1, this), GrenadeLauncher(-1, -1, this), Sniper(-1, -1, this), RocketLauncher(-1, -1, this))
 
   /** ENEMIES */
   private var enemyCollection = Buffer[EnemySoldier]()
@@ -73,6 +77,7 @@ class Game (val map: Map):
   /** BASIC DEPLOY METHOD */
   def deploy(enemy: EnemySoldier) =
     enemyCollection += enemy
+
 
   /** GUN TOWER METHODS */
   def place(gunTowerType: String, x: Int, y: Int) =
@@ -100,14 +105,14 @@ class Game (val map: Map):
       case "Sniper"           => 300
       case "RocketLauncher"   => 500
 
-  def upgrade(x: Int, y: Int) =
-    val square = map.elementAt(GridPos(x, y))
+  def upgrade(gridPos: GridPos) =
+    val square = map.elementAt(gridPos)
     if !square.isEmpty && square.tower.get.upgradePrice <= gold then
       square.tower.get.upgrade()
       gold -= square.tower.get.upgradePrice
 
   def remove(pos: GridPos) =
-    gold -= (this.headquarter.getGoldBackRate* map.elementAt(pos).tower.get.asInstanceOf[GunTower].price).toInt
+    gold += (this.headquarter.getGoldBackRate* map.elementAt(pos).tower.get.asInstanceOf[GunTower].price).toInt
     gunTowerCollection -= map.elementAt(pos).tower.get.asInstanceOf[GunTower]
     map.elementAt(pos).clear()
 
@@ -116,25 +121,29 @@ class Game (val map: Map):
   //RAGE
   private var rageEndTime = 0.0
   def getRageEndTime = rageEndTime
-  def rage =
+  def rage() =
     if gold >= abilityPrice then
       gold -= abilityPrice
       gunTowers.foreach(gun => gun.rage)
       rageEndTime = survivingTimeInOneFifthSec + 15*5
-  def derage =
+      println("rg")
+  def derage() =
     gunTowers.foreach(gun => gun.derage)
     rageEndTime = 0
   //FREEZE
   private var freezeEndTime = 0.0
-  def getFreezeEndTime = rageEndTime
-  def freeze =
+  def getFreezeEndTime = freezeEndTime
+  def freeze() =
     if gold >= abilityPrice then
       gold -= abilityPrice
       freezeEndTime = survivingTimeInOneFifthSec + 15*5
-  def defrost =
+      println("fr")
+  def defrost() =
     freezeEndTime = 0
   //POISON
-  def poison = enemies.foreach(enemy => enemy.minusHP((enemy.getHP*1.0/2).toInt))
+  def poison() =
+    enemies.foreach(enemy => enemy.minusHP(100))//(enemy.getHP*1.0/2).toInt))
+    println("ps")
 
 
 
@@ -148,5 +157,4 @@ class Game (val map: Map):
     val writer = new BufferedWriter(new FileWriter(filePath, true))
     writer.write(data)
     writer.close()
-
 end Game

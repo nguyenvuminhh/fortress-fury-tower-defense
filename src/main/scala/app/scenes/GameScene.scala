@@ -8,13 +8,13 @@ import scalafx.scene.SceneIncludes.jfxNode2sfx
 import scalafx.application.{JFXApp3, Platform}
 import scalafx.beans.property.{DoubleProperty, ObjectProperty, StringProperty}
 import scalafx.geometry.Insets
-import scalafx.geometry.Pos.BaselineCenter
+import scalafx.geometry.Pos.{BOTTOM_CENTER, BaselineCenter}
 import scalafx.scene.input.{KeyCode, KeyEvent}
 import scalafx.scene.Scene
 import scalafx.scene.control.Label
 import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.layout.{BorderPane, GridPane, HBox, Pane, StackPane, VBox}
-import scalafx.scene.paint.Color.{Blue, Green, Red, Transparent}
+import scalafx.scene.paint.Color.{Black, Blue, Green, Red, Transparent, White}
 import scalafx.scene.shape.Rectangle
 import scalafx.scene.text.{Font, FontWeight, Text, TextFlow}
 import scalafx.scene.layout.GridPane.{getColumnIndex, getRowIndex}
@@ -22,9 +22,11 @@ import scalafx.delegate.SFXDelegate
 import scalafx.Includes.*
 import scalafx.scene.paint.Color
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.mutable.Buffer
 import java.util.{Timer, TimerTask}
 import java.util.concurrent.{Executors, TimeUnit}
+import scala.concurrent.Future
 import scala.math.min
 import scala.util.Random
 
@@ -34,7 +36,14 @@ class GameScene (
 ) extends Scene:
   val game = Game(logic.Map1)
 
-  /** UI Variables */
+  /** COLOR VARIABLES */
+  val buttonColor = Color.web("#BF9000")
+  val topTextColor = "#000000"
+  val fontName = "Gotham"
+  val strokeColor = Black
+  val bgColor = "#ffffff"
+
+  /** UI VARIABLES */
   val squareside = 50
   val colNum = 32
   val rowNum = 11
@@ -43,16 +52,19 @@ class GameScene (
   var selectedGridPos = GridPos(-1, -1)
   val widthPropertyOfHQHP = DoubleProperty(50*game.headquarter.HPpercentage)
 
-  /** Game Variables */
+  /** GAME VARIABLES */
   val level = 1
-  def wave = game.getWave
+  def wave = (game.getWave)
   def gold = game.getGold
   def score = game.getScore
   def HP = game.headquarter.getHP.toString + "/" + game.headquarter.getMaxHP.toString
   val gunPrice = Vector(120, 150, 200, 250, 300, 500)
   var toBeDeployed = Vector[EnemySoldier]()
+  var nextDeployTime: Long = 5*10
+  var deployOnCD = false
+  var cannotDeployUntil = 0L
 
-  /** Picture Variables */
+  /** IMAGE VARIABLES */
   val sqCannon = Image("image/sqCannon.png")
   val sqSharpshooter = Image("image/sqSharpshooter.png")
   val sqSniper = Image("image/sqSniper.png")
@@ -122,10 +134,7 @@ class GameScene (
             selectedGunIndex = -1
           else if !game.map.elementAt(GridPos(col, row)).isEmpty && game.map.elementAt(GridPos(col, row)).isPlacable then
             selectedGridPos = GridPos(col, row)
-            val tower = game.map.elementAt(selectedGridPos).tower.get
-            tower match
-              case tower1: GunTower => bottomCenter.children = tower1.description
-              case _ =>
+            bottomCenter.children = game.map.elementAt(selectedGridPos).tower.get.description
       add(square, col, row)
 
   val paneForEnemy = new Pane:
@@ -134,20 +143,20 @@ class GameScene (
   paneForEnemy.setMouseTransparent(true)
 
   /** LEVEL WAVE TEXT */
-  val levelWaveValueProperty = StringProperty("Wave " + wave.toString)
+  val levelWaveValueProperty = StringProperty("Wave" + (wave -1))
   val levelWaveLabel = new Text:
-    font = Font.font("Arial", FontWeight.Bold, null, 20)
+    style = s"-fx-font-family: $fontName; -fx-font-weight: bold; -fx-font-size: 20px; -fx-fill: $topTextColor;"
   levelWaveLabel.text <== levelWaveValueProperty
-
   /** GOLD TEXT */
   val goldValueProperty = StringProperty(gold.toString)
   def updateGold() = goldValueProperty.value = gold.toString
   val goldText = new TextFlow:
     val goldLabel = new Text:
       text = "Gold: "
-      font = Font.font("Arial", FontWeight.Bold, null, 15)
+      style = s"-fx-font-family: $fontName; -fx-font-weight: bold; -fx-font-size: 15; -fx-fill: $topTextColor;"
+
     val goldValue = new Text:
-      font = Font.font("Arial", null, null, 15)
+      style = s"-fx-font-family: $fontName; -fx-font-size: 15px; -fx-fill: $topTextColor;"
     goldValue.text <== goldValueProperty
     children = Seq(goldLabel, goldValue)
 
@@ -156,16 +165,16 @@ class GameScene (
   val HPText = new TextFlow:
     val HPLabel = new Text:
       text = "HP: "
-      font = Font.font("Arial", FontWeight.Bold, null, 15)
+      style = s"-fx-font-family: $fontName; -fx-font-weight: bold; -fx-font-size: 15px; -fx-fill: $topTextColor;"
     val HPValue = new Text:
-      font = Font.font("Arial", null, null, 15)
+      style = s"-fx-font-family: $fontName; -fx-font-size: 15px; -fx-fill: $topTextColor;"
     HPValue.text <== HPProperty
     children = Seq(HPLabel, HPValue)
 
   /** SCORE TEXT */
   val scoreProperty = StringProperty(score.toString)
   val scoreText = new Text:
-    font = Font.font("Arial", FontWeight.Bold, null, 36)
+    style = s"-fx-font-family: $fontName; -fx-font-weight: bold; -fx-font-size: 36px; -fx-fill: $topTextColor;"
   scoreText.text <== scoreProperty
 
   /** Variables for speedup and setting buttons */
@@ -177,9 +186,10 @@ class GameScene (
     val settingBg = new Rectangle:
       arcHeight = 30
       arcWidth = 30
+      stroke = White
       height = bgSize
       width = bgSize
-      fill = Blue
+      fill = buttonColor
     val settingIcon = new ImageView:
       fitHeight = iconSize
       fitWidth = iconSize
@@ -198,7 +208,7 @@ class GameScene (
       arcWidth = 30
       height = bgSize
       width = bgSize
-      fill = Blue
+      fill = buttonColor
     val speedupIcon = new ImageView:
       fitHeight = iconSize
       fitWidth = iconSize
@@ -216,7 +226,7 @@ class GameScene (
   /** TIME CLOCK */
   def elapsedTime: Long = game.getSurvivingTimeInOneFifthSec/5
   val timerText = new Text:
-    style = "-fx-font-size: 20pt"
+    style = s"-fx-font-size: 20pt; -fx-fill: $topTextColor;"
 
   def updateTimerText(): Unit =
     //CONVERT TO HH:MM:SS
@@ -225,11 +235,12 @@ class GameScene (
     val seconds = elapsedTime % 60
     //UPDATE TIMETEXT
     timerText.text = f"$hours%02d:$minutes%02d:$seconds%02d"
-    //UPDATE SCORE AND GOLD
+    //UPDATE SCORE AND GOLD AND HP
     scoreProperty.value = game.getScore.toString
     if game.getSurvivingTimeInOneFifthSec%50 == 0 then
       game.giveGold()
       updateGold()
+    HPProperty.value = HP
     //ADVANCE THE ENEMY
     if game.getFreezeEndTime == 0 then
       game.enemies.foreach(enemy =>
@@ -241,9 +252,16 @@ class GameScene (
     game.enemies.foreach(enemy =>
       if enemy.isDead then
         game.addScore(enemy.point)
+        game.addGold(enemy.gold)
         Platform.runLater(() -> {paneForEnemy.children -= enemy.imageView}))
     game.filterDeadEnemy()
     //DEPLOY ENEMY
+    if (game.getSurvivingTimeInOneFifthSec == nextDeployTime || game.enemies.isEmpty) && game.getSurvivingTimeInOneFifthSec >= cannotDeployUntil then
+      deployWave(wave)
+      nextDeployTime = game.getSurvivingTimeInOneFifthSec + 120*5
+      game.nextWave
+      levelWaveValueProperty.value = "Wave " + (wave -1)
+      cannotDeployUntil = game.getSurvivingTimeInOneFifthSec + 10*5
     if toBeDeployed.nonEmpty && game.getSurvivingTimeInOneFifthSec%5 == 0 then
       val enemy = toBeDeployed.head
       game.deploy(enemy)
@@ -254,8 +272,8 @@ class GameScene (
     //SHOOT
     game.gunTowers.foreach(_.shoot())
     //END ABILITY
-    if game.getSurvivingTimeInOneFifthSec == game.getRageEndTime.toLong then game.derage
-    if game.getSurvivingTimeInOneFifthSec == game.getFreezeEndTime.toLong then game.defrost
+    if game.getSurvivingTimeInOneFifthSec == game.getRageEndTime.toLong then game.derage()
+    if game.getSurvivingTimeInOneFifthSec == game.getFreezeEndTime.toLong then game.defrost()
 
 
 
@@ -280,7 +298,7 @@ class GameScene (
       height = btHeight
       arcWidth = 20
       arcHeight = 20
-      fill = Red
+      fill = buttonColor
     val abilityPicture = new StackPane:
       val abilityPictureContent = new ImageView:
         fitWidth = btWidth*4/5
@@ -288,6 +306,7 @@ class GameScene (
         image = abilityCollection(i)
         padding = Insets(btWidth/15, 0, 0, 0)
       children += abilityPictureContent
+
 
     val priceLabel = Label(game.abilityPrice.toString)
     priceLabel.font = Font.font("Arial", FontWeight.Bold, null, 20)
@@ -303,7 +322,12 @@ class GameScene (
       alignment = scalafx.geometry.Pos.Center
       onMouseClicked = (event) =>
         selectedGunIndex = i
-}
+          onMouseClicked = (event) =>
+            i match
+              case 0 => game.poison()
+              case 1 => game.freeze()
+              case 2 => game.rage()
+      }
 
 
 
@@ -316,11 +340,12 @@ class GameScene (
       height = btHeight
       arcWidth = 20
       arcHeight = 20
-      fill = Red
+      fill = buttonColor
     val gunPicture = new StackPane:
       val gunPictureContent = new ImageView:
         fitWidth = btWidth*4/5
         fitHeight = btWidth*4/5
+
         image = sqGunCollection(i)
         padding = Insets(btWidth/15, 0, 0, 0)
       children += gunPictureContent
@@ -332,6 +357,7 @@ class GameScene (
       alignment = BaselineCenter
       children = Array(gunPicture, priceLabel)
       padding = Insets(btWidth/15, 0, 0, 0)
+  
 
     new StackPane:
       maxHeight = btHeight
@@ -339,6 +365,7 @@ class GameScene (
       alignment = scalafx.geometry.Pos.Center
       onMouseClicked = (event) =>
         selectedGunIndex = i
+        bottomCenter.children = game.infoGunTowers(i).description
 }
 
 
@@ -350,7 +377,7 @@ class GameScene (
   /** Top */
   val topleft = new VBox:
     spacing = 10
-    padding = Insets(0, 20, 0, 20)
+    padding = Insets(0, 20, 10, 20)
     children = Seq(levelWaveLabel, goldText, HPText)
   val topcenter = new VBox:
     alignment = scalafx.geometry.Pos.Center
@@ -360,13 +387,16 @@ class GameScene (
     children = Seq(speedup, setting)
     padding = Insets(0, 70, 0, 0)
     spacing = 10
-  val top = new BorderPane(topcenter, null, topright, null, topleft):
-    padding = Insets(0, 0, 10, 0)
+  val topBottom = new Rectangle:
+    height = 5
+    width <== center.width
+    fill = strokeColor
+  val top = new BorderPane(topcenter, null, topright, null, topleft)
 
   /** Bottom */
   val bottomRight = new HBox:
     children = gunButtonsArray
-    spacing = 10
+    spacing = 20
     padding = Insets(0, 70, 10, 0)
     alignment = scalafx.geometry.Pos.Center
   val bottomLeft = new HBox:
@@ -379,14 +409,17 @@ class GameScene (
     padding = Insets(0, 0 , 10, 0)
     maxHeight = 130
     maxWidth = 300
+  val bottomTop = new Rectangle:
+    height = 5
+    width <== center.width
+    fill = strokeColor
   val bottom = new BorderPane(bottomCenter, null, bottomRight, null, bottomLeft)
-
 
 
   /** Root */
   val maincontainer = BorderPane(center, top, null, bottom, null)
   root = maincontainer
-  root.value.style = "-fx-background-color: #C3E66C;"
+  root.value.style = s"-fx-background-color: $bgColor;"
 
   /** Helper methods */
   def squaretype(x: Int, y: Int) =
@@ -436,7 +469,7 @@ class GameScene (
     val troops = unit(a, 4) ++ unit(b, 3) ++ unit(c, 2) ++ unit(d, 1)
     val timer = new Timer()
     var index = 0
-    toBeDeployed = troops
+    if wave != 0 then toBeDeployed = troops else ()
 
 //TODO: ask about java thing
   onKeyTyped = (ke: KeyEvent) =>
@@ -455,11 +488,11 @@ class GameScene (
         selectedGunIndex = -1
       /** UPGRADE GUN */
       case "u" =>
-        deployWave(1)
+        if selectedGridPos != GridPos(-1, -1) then game.upgrade(selectedGridPos)
+      case e => ()
 
   widthPropertyOfHQHP.onChange((_, _, newValue) =>
     if newValue == 0 then
-      game.saveRecord()
-      print("end"))
+      game.saveRecord())
 
 

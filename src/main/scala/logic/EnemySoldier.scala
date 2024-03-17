@@ -9,26 +9,27 @@ import scalafx.scene.shape.Rectangle
 import scalafx.scene.text.FontWeight.Black
 import scalafx.scene.paint.Color.*
 
-import scala.math.{Pi, cos, round, sin}
+import scala.math.{Pi, cos, round, sin, pow}
 import scala.math.BigDecimal.RoundingMode
 
 
 
-abstract class EnemySoldier(game: Game, damage: Int):
-  
+abstract class EnemySoldier(game: Game, baseDamage: Int):
+
+
+  val damage: Int = (baseDamage*pow(1.3, game.getWave)).toInt
   /** HP */
   private var HP = damage
   def getHP = HP
   private var maxHP = damage
   def getMaxHP = maxHP
-  def HPpercentage = 1.0*HP/maxHP
+  def HPpercentage = 1.0*getHP/getMaxHP
   def minusHP(amount: Int) = HP -= amount
   def isDead = HP <= 0
 
   /** GOLD AND POINT */
-  val gold = damage/10
+  val gold = damage/100
   val point = damage*10
-
   
   /** POSITION */
   private var x = game.map.startingSquare.x*1.0
@@ -84,22 +85,22 @@ abstract class EnemySoldier(game: Game, damage: Int):
     children = Seq(maxHPbar, HPbar)
   val imageView = new BorderPane(enemyImage, null, null, HPimage, null)
 
-case class Infantry(game: Game) extends EnemySoldier(game, 200):
+case class Infantry(game: Game) extends EnemySoldier(game, 400):
   override val picturePath = "image/infantry.png"
   override def toString = s"Infantry($getX, $getY)"
 end Infantry
 
-case class Cavalry(game: Game) extends EnemySoldier(game, 400):
+case class Cavalry(game: Game) extends EnemySoldier(game, 600):
   override val picturePath = "image/cavalry.png"
   override def toString = s"Cavalry($getX, $getY)"
 end Cavalry
 
-case class ArmoredCar(game: Game) extends EnemySoldier(game, 600):
+case class ArmoredCar(game: Game) extends EnemySoldier(game, 800):
   override val picturePath = "image/armoredCar.png"
   override def toString = s"ArmoredCar($getX, $getY)"
 end ArmoredCar
 
-case class Tank(game: Game) extends EnemySoldier(game, 800):
+case class Tank(game: Game) extends EnemySoldier(game, 1000):
   override val picturePath = "image/tank.png"
   override def toString = s"Tank($getX, $getY)"
 end Tank
