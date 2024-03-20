@@ -10,18 +10,19 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.nio.file.{Files, Paths}
-import java.io.{FileWriter, BufferedWriter, File}
-import java.nio.file.{Paths, Files}
-import scala.util.{Try, Success, Failure}
+import java.io.{BufferedWriter, File, FileOutputStream, FileWriter, ObjectOutputStream, PrintWriter}
+import java.nio.file.{Files, Paths}
+import scala.util.{Failure, Success, Try}
 import scalafx.beans.property.BooleanProperty
 
-import java.io.PrintWriter
-
-class Game (val map: Map):
+class Game (val map: Map) extends Serializable:
   /** SCORE */
   private var score = 0
   def getScore = score
   def addScore(amount: Int) = score += amount
+  private var enemyKilled = 0
+  def getEnemyKilled = enemyKilled
+  def increaseEnemyKilled() = enemyKilled += 1
 
   /** GOLD */
   private var gold = 10000
@@ -74,9 +75,12 @@ class Game (val map: Map):
   def enemies = enemyCollection
   def filterDeadEnemy() = enemyCollection = enemyCollection.filter(_.getHP > 0)
 
-  /** BASIC DEPLOY METHOD */
+  /** DEPLOY */
   def deploy(enemy: EnemySoldier) =
     enemyCollection += enemy
+  var toBeDeployed = Vector[EnemySoldier]()
+  var nextDeployTime: Long = 5*10
+  var cannotDeployUntil = 0L
 
 
   /** GUN TOWER METHODS */
@@ -137,24 +141,43 @@ class Game (val map: Map):
     if gold >= abilityPrice then
       gold -= abilityPrice
       freezeEndTime = survivingTimeInOneFifthSec + 15*5
-      println("fr")
   def defrost() =
     freezeEndTime = 0
   //POISON
   def poison() =
-    enemies.foreach(enemy => enemy.minusHP(100))//(enemy.getHP*1.0/2).toInt))
-    println("ps")
-
-
+    if gold >= abilityPrice then
+      gold -= abilityPrice
+      enemies.foreach(enemy =>
+        enemy.minusHP(100)
+        enemy.widthProperty.value = 50*enemy.HPpercentage)
 
   /** SAVE GAME */
   def saveRecord(): Unit =
     val currentDate = LocalDate.now()
     val customFormat = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)
     val date = currentDate.format(customFormat)
-    val data = s"$date\t$score\t$survivingTimeInOneFifthSec\n"
+    val data = s"$date\t$score\t${survivingTimeInOneFifthSec / 5}\t${wave - 1}\t$enemyKilled\n"
     val filePath = "src/main/resources/record.txt"
     val writer = new BufferedWriter(new FileWriter(filePath, true))
-    writer.write(data)
-    writer.close()
+    try {
+      writer.write(data)
+    }
+    catch
+      case e: Exception => println(e.getMessage)
+    finally {writer.close()}
+
+  def saveGame() =
+    val fileOutputStream = new FileOutputStream("savedGame.ser")
+    val objectOutputStream = new ObjectOutputStream(fileOutputStream)
+    try{
+      objectOutputStream.writeObject(this)
+    }
+    catch {
+      case e: Exception => println(e.getMessage)
+    }
+    finally{
+      fileOutputStream.close()
+      objectOutputStream.close()
+    }
+    
 end Game

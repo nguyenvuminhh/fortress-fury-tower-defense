@@ -24,7 +24,7 @@ class LobbyScene (
     translateY = 140
     alignmentInParent = scalafx.geometry.Pos.Center
     onMouseClicked = (event) =>
-      selectedScene.value = Scenes.GameScene
+      selectedScene.value = Scenes.ContinueGameScene
 
   val leaderboardButton = new ImageView:
     image = Image("image/leaderboardButton.png")
@@ -39,5 +39,7 @@ class LobbyScene (
 
   val maincontainer = new BorderPane(container, null, null, null, null)
   root = maincontainer
+  maincontainer.prefWidth = 1920
+  maincontainer.prefHeight = 1080
 
 

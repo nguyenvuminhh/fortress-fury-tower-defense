@@ -38,9 +38,11 @@ Sprint 2: 04.03.24
       + tried using Thread (it worked)
     - glitch
 
-  Time Spent: 10h
+  Time Spent: 15h
 
-  Schedule: 
+  Schedule: Ahead
+
+  Goal: Get other scenes done (record, setting, gameover, ...)
   
 Sprint 1: 04.03.24
 

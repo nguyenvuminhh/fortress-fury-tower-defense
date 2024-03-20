@@ -8,7 +8,7 @@ import scalafx.scene.SceneIncludes.jfxNode2sfx
 import scalafx.application.{JFXApp3, Platform}
 import scalafx.beans.property.{DoubleProperty, ObjectProperty, StringProperty}
 import scalafx.geometry.Insets
-import scalafx.geometry.Pos.{BOTTOM_CENTER, BaselineCenter}
+import scalafx.geometry.Pos.BaselineCenter
 import scalafx.scene.input.{KeyCode, KeyEvent}
 import scalafx.scene.Scene
 import scalafx.scene.control.Label
@@ -27,17 +27,20 @@ import scala.collection.mutable.Buffer
 import java.util.{Timer, TimerTask}
 import java.util.concurrent.{Executors, TimeUnit}
 import scala.concurrent.Future
+import scala.io.Source
 import scala.math.min
 import scala.util.Random
 
 class GameScene (
     mainStage: JFXApp3.PrimaryStage,
     selectedScene: ObjectProperty[Scenes],
+    game: Game
 ) extends Scene:
-  val game = Game(logic.Map1)
+
+
 
   /** COLOR VARIABLES */
-  val buttonColor = Color.web("#BF9000")
+  val buttonColor = Color.web("#BF9000") //DARK BROWN
   val topTextColor = "#000000"
   val fontName = "Gotham"
   val strokeColor = Black
@@ -53,16 +56,12 @@ class GameScene (
   val widthPropertyOfHQHP = DoubleProperty(50*game.headquarter.HPpercentage)
 
   /** GAME VARIABLES */
-  val level = 1
   def wave = (game.getWave)
   def gold = game.getGold
   def score = game.getScore
   def HP = game.headquarter.getHP.toString + "/" + game.headquarter.getMaxHP.toString
   val gunPrice = Vector(120, 150, 200, 250, 300, 500)
-  var toBeDeployed = Vector[EnemySoldier]()
-  var nextDeployTime: Long = 5*10
-  var deployOnCD = false
-  var cannotDeployUntil = 0L
+
 
   /** IMAGE VARIABLES */
   val sqCannon = Image("image/sqCannon.png")
@@ -252,30 +251,29 @@ class GameScene (
     game.enemies.foreach(enemy =>
       if enemy.isDead then
         game.addScore(enemy.point)
+        game.increaseEnemyKilled()
         game.addGold(enemy.gold)
         Platform.runLater(() -> {paneForEnemy.children -= enemy.imageView}))
     game.filterDeadEnemy()
     //DEPLOY ENEMY
-    if (game.getSurvivingTimeInOneFifthSec == nextDeployTime || game.enemies.isEmpty) && game.getSurvivingTimeInOneFifthSec >= cannotDeployUntil then
+    if (game.getSurvivingTimeInOneFifthSec == game.nextDeployTime || game.enemies.isEmpty) && game.getSurvivingTimeInOneFifthSec >= game.cannotDeployUntil then
       deployWave(wave)
-      nextDeployTime = game.getSurvivingTimeInOneFifthSec + 120*5
+      game.nextDeployTime = game.getSurvivingTimeInOneFifthSec + 120*5
       game.nextWave
-      levelWaveValueProperty.value = "Wave " + (wave -1)
-      cannotDeployUntil = game.getSurvivingTimeInOneFifthSec + 10*5
-    if toBeDeployed.nonEmpty && game.getSurvivingTimeInOneFifthSec%5 == 0 then
-      val enemy = toBeDeployed.head
+      levelWaveValueProperty.value = "Wave " + (wave - 1)
+      game.cannotDeployUntil = game.getSurvivingTimeInOneFifthSec + 10*5
+    if game.toBeDeployed.nonEmpty && game.getSurvivingTimeInOneFifthSec%5 == 0 then
+      val enemy = game.toBeDeployed.head
       game.deploy(enemy)
       Platform.runLater(() -> {
         enemy.enemyImage.image = Image(enemy.picturePath)
         paneForEnemy.children += enemy.imageView})
-      toBeDeployed = toBeDeployed.drop(1)
+      game.toBeDeployed = game.toBeDeployed.drop(1)
     //SHOOT
     game.gunTowers.foreach(_.shoot())
     //END ABILITY
     if game.getSurvivingTimeInOneFifthSec == game.getRageEndTime.toLong then game.derage()
     if game.getSurvivingTimeInOneFifthSec == game.getFreezeEndTime.toLong then game.defrost()
-
-
 
   def increaseTime(): Unit =
     if !game.getIsPaused then
@@ -287,7 +285,6 @@ class GameScene (
       Thread.sleep((200*1.0/game.pace).toLong)
       increaseTime())
   timerThread.start()
-
 
   /** ABILITIES */
   val btWidth = 100
@@ -306,7 +303,6 @@ class GameScene (
         image = abilityCollection(i)
         padding = Insets(btWidth/15, 0, 0, 0)
       children += abilityPictureContent
-
 
     val priceLabel = Label(game.abilityPrice.toString)
     priceLabel.font = Font.font("Arial", FontWeight.Bold, null, 20)
@@ -328,10 +324,6 @@ class GameScene (
               case 1 => game.freeze()
               case 2 => game.rage()
       }
-
-
-
-
 
   /** GUN BUTTONS */
   val gunButtonsArray = Array.tabulate(6) { i =>
@@ -368,6 +360,66 @@ class GameScene (
         bottomCenter.children = game.infoGunTowers(i).description
 }
 
+  /** GAME OVER */
+  val gameOver = new Text:
+    text = "GAME OVER"
+    style = "-fx-font-family: Gotham; -fx-font-weight: bold; -fx-font-size: 45;"
+  val scoreStat = new Text:
+    style = "-fx-font-family: Gotham; -fx-font-weight: bold; -fx-font-size: 35;"
+  val survivingTime = new Text:
+    style = "-fx-font-family: Gotham; -fx-font-weight: bold; -fx-font-size: 20;"
+  val wavesSurvived = new Text:
+    style = "-fx-font-family: Gotham; -fx-font-weight: bold; -fx-font-size: 25;"
+  val enemiesKilled = new Text:
+    style = "-fx-font-family: Gotham; -fx-font-weight: bold; -fx-font-size: 25;"
+
+  val waveEnemyVbox = new StackPane:
+    val content = new VBox:
+      children = Seq(wavesSurvived, enemiesKilled)
+      alignment = scalafx.geometry.Pos.Center
+    val bg = new Rectangle:
+      height = 100
+      width = 300
+      arcHeight = 30
+      arcWidth = 30
+      fill = Color.web("#F4C55E") //LIGHT BROWN
+      stroke = Color.web("#6C5200")
+      strokeWidth = 5
+    padding = Insets(50, 0, 0, 0)
+    children = Seq(bg, content)
+
+  val playAgain = new StackPane:
+    val content = new Text:
+      text = "PLAY AGAIN"
+      style = "-fx-font-family: Gotham; -fx-font-weight: bold; -fx-font-size: 25;"
+    val bg = new Rectangle:
+      width = 200
+      height = 50
+      arcWidth = 30
+      arcHeight = 30
+      fill = Color.web("#F4C55E") //LIGHT BROWN
+      stroke = Color.web("#6C5200")
+      strokeWidth = 5
+    padding = Insets(50, 0, 0, 0)
+    children = Seq(bg, content)
+
+  val statContent = new VBox:
+    spacing = 5
+    alignment = scalafx.geometry.Pos.Center
+    prefWidth = 200
+    children = Seq(gameOver, scoreStat, survivingTime, waveEnemyVbox, playAgain)
+  val statBg = new Rectangle:
+    height = 500
+    width = 400
+    arcHeight = 30
+    arcWidth = 30
+    fill = buttonColor
+  val statBlurBg = new Rectangle:
+    height <== paneForEnemy.height
+    width <== paneForEnemy.width
+    fill = Color.web("#000000", 0.7)
+  val stat = new StackPane:
+    children = Seq(statBlurBg, statBg, statContent)
 
   /** Center */
   val center = new StackPane:
@@ -387,10 +439,6 @@ class GameScene (
     children = Seq(speedup, setting)
     padding = Insets(0, 70, 0, 0)
     spacing = 10
-  val topBottom = new Rectangle:
-    height = 5
-    width <== center.width
-    fill = strokeColor
   val top = new BorderPane(topcenter, null, topright, null, topleft)
 
   /** Bottom */
@@ -409,16 +457,14 @@ class GameScene (
     padding = Insets(0, 0 , 10, 0)
     maxHeight = 130
     maxWidth = 300
-  val bottomTop = new Rectangle:
-    height = 5
-    width <== center.width
-    fill = strokeColor
   val bottom = new BorderPane(bottomCenter, null, bottomRight, null, bottomLeft)
 
 
   /** Root */
   val maincontainer = BorderPane(center, top, null, bottom, null)
   root = maincontainer
+  maincontainer.prefWidth = 1920
+  maincontainer.prefHeight = 1080
   root.value.style = s"-fx-background-color: $bgColor;"
 
   /** Helper methods */
@@ -469,7 +515,7 @@ class GameScene (
     val troops = unit(a, 4) ++ unit(b, 3) ++ unit(c, 2) ++ unit(d, 1)
     val timer = new Timer()
     var index = 0
-    if wave != 0 then toBeDeployed = troops else ()
+    if wave != 0 then game.toBeDeployed = troops else ()
 
 //TODO: ask about java thing
   onKeyTyped = (ke: KeyEvent) =>
@@ -489,10 +535,18 @@ class GameScene (
       /** UPGRADE GUN */
       case "u" =>
         if selectedGridPos != GridPos(-1, -1) then game.upgrade(selectedGridPos)
+      case "f" => widthPropertyOfHQHP.value = 0
+      case "s" => game.saveGame()
       case e => ()
 
   widthPropertyOfHQHP.onChange((_, _, newValue) =>
-    if newValue == 0 then
-      game.saveRecord())
+    if newValue.intValue() <= 0 then
+      game.saveRecord()
+      scoreStat.text = score.toString
+      survivingTime.text = timerText.text.value
+      enemiesKilled.text = "Killed " + game.getEnemyKilled.toString + " enemies"
+      wavesSurvived.text = "Survived " + ((wave-1).toString) + " waves"
+      Platform.runLater(() -> center.children.append(stat))
+      println("saved"))
 
 
