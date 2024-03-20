@@ -1,7 +1,9 @@
 package logic
 import grid.*
 
-abstract class Map extends Grid[Square](32, 11):
+import java.io
+
+abstract class Map extends Grid[Square](32, 11) with io.Serializable:
   def startingSquare: GridPos
   def HQSquare: GridPos
   def crashSquare: GridPos

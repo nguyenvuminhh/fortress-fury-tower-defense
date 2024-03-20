@@ -10,13 +10,14 @@ import scalafx.scene.shape.Rectangle
 import scalafx.scene.text.TextAlignment.Center
 import scalafx.scene.text.{Text, TextFlow}
 
-import scala.math.{atan2, pow, sqrt, toDegrees, min}
+import java.io
+import scala.math.{atan2, min, pow, sqrt, toDegrees}
 import scala.concurrent.*
 import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.math.BigDecimal.RoundingMode
 
-trait Tower:
+trait Tower extends io.Serializable:
   def upgrade(): Unit
   def upgradePrice: Int
   def description: Seq[Node]
@@ -27,22 +28,21 @@ end Tower
 case class Headquarter(x: Double, y: Double) extends Tower:
 
   /** LEVEL */
-  private var level = 1
+  private var level = 1 //NEED SAVING
   def getLevel = level
-
 
   /** HP */
   private var HP = 2000
   def getHP = HP
   private var maxHP = 2000
   def getMaxHP = maxHP
-  def HPpercentage = HP*1.0/maxHP
+  def HPpercentage = HP*1.0/maxHP //NEED SAVING
   def minusHP(amount: Int) = HP -= amount
 
   /** GOLD */
-  private var goldPer10s = 10
+  private var goldPer10s = 10 //NEED SAVING
   def getGoldPer10s = goldPer10s
-  private var goldBackRate = 0.6
+  private var goldBackRate = 0.6 //NEED SAVING
   def getGoldBackRate = goldBackRate
 
   /** UPGRADE */
@@ -50,9 +50,17 @@ case class Headquarter(x: Double, y: Double) extends Tower:
   def upgrade() =
     level += 1
     HP = (HP * 1.05).toInt
+    maxHP = (maxHP * 1.05).toInt
     goldPer10s = (goldPer10s * 1.05).toInt
     goldBackRate = min(goldBackRate + 0.1, 0.9)
 
+  /** LOAD */
+  def load(stringInfo: String) =
+    val info = stringInfo.split("\t").takeRight(2)
+    for i <- 0 until info(0).toInt do this.upgrade()
+    HP = info(1).toInt
+
+    
   /** DESCRIPTION */
   def description =
     val stats = Seq("Level: " -> level, "Gold/10s: " -> getGoldPer10s, "Upgrade Price: " -> upgradePrice,
@@ -89,7 +97,9 @@ case class Headquarter(x: Double, y: Double) extends Tower:
       fill = Color.web("#BF9000")
     Seq(bg, info)
 
-class GunTower(name: String, x: Int, y: Int, var damage: Int, var fireRate: Double, var range: Double, val price: Int, game: Game) extends Tower:
+  override def toString: String = s"HQ\t$x\t$y\t$level\t$getHP\n"
+  
+class GunTower(val name: String, x: Int, y: Int, var damage: Int, var fireRate: Double, var range: Double, val price: Int, game: Game) extends Tower:
   /** STATISTIC */
   private var rageConst = 1.0
   def getDamage = (damage*rageConst).toInt
@@ -118,6 +128,10 @@ class GunTower(name: String, x: Int, y: Int, var damage: Int, var fireRate: Doub
     if target.nonEmpty then
       prevAngle.value = toDegrees(atan2((y*1.0 - target.get.getY),(x*1.0 - target.get.getX)))
 
+  /** LOAD */
+  def load(stringInfo: String) =
+    val info = stringInfo.split("\t").takeRight(1).head.toInt
+    for i <- 0 until info do this.upgrade()
   /** SHOOT METHODS */
   var onCoolDown = false
   def target: Option[EnemySoldier] = game.enemies.find(enemy => distanceTo(enemy) <= getRange)
@@ -176,6 +190,7 @@ class GunTower(name: String, x: Int, y: Int, var damage: Int, var fireRate: Doub
 
     Seq(bg, info)
 
+  override def toString: String = s"$name\t$x\t$y\t$level\n"
 
 end GunTower
 

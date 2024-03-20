@@ -34,7 +34,8 @@ import scala.util.Random
 class GameScene (
     mainStage: JFXApp3.PrimaryStage,
     selectedScene: ObjectProperty[Scenes],
-    game: Game
+    game: Game,
+    needLoad: Boolean
 ) extends Scene:
 
 
@@ -537,6 +538,7 @@ class GameScene (
         if selectedGridPos != GridPos(-1, -1) then game.upgrade(selectedGridPos)
       case "f" => widthPropertyOfHQHP.value = 0
       case "s" => game.saveGame()
+      case "g" => game.enemies.map(_.toString).foreach(println(_))
       case e => ()
 
   widthPropertyOfHQHP.onChange((_, _, newValue) =>
@@ -546,7 +548,16 @@ class GameScene (
       survivingTime.text = timerText.text.value
       enemiesKilled.text = "Killed " + game.getEnemyKilled.toString + " enemies"
       wavesSurvived.text = "Survived " + ((wave-1).toString) + " waves"
-      Platform.runLater(() -> center.children.append(stat))
-      println("saved"))
+      Platform.runLater(() -> center.children.append(stat)))
 
+  if needLoad then
+    game.load()
+    game.enemies.foreach(enemy =>
+      enemy.enemyImage.image = Image(enemy.picturePath)
+      paneForEnemy.children += enemy.imageView)
+    game.gunTowers.foreach(gun =>
+      val gridPos = GridPos(gun.getX, gun.getY)
+      squareInGrid(gridPos, gridMap).children(1).asInstanceOf[javafx.scene.image.ImageView].image = Image("image/ci" + gun.name + ".png")
+      squareInGrid(gridPos, gridMap).children(1).asInstanceOf[javafx.scene.image.ImageView].rotate <== gun.prevAngle)
+    widthPropertyOfHQHP.value = 50*game.headquarter.HPpercentage
 

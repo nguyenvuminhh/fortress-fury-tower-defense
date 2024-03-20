@@ -1,6 +1,8 @@
 package logic
 
-trait Square:
+import java.io
+
+trait Square extends io.Serializable:
   def isEmpty: Boolean
   def isPlacable: Boolean
   def tower: Option[Tower]

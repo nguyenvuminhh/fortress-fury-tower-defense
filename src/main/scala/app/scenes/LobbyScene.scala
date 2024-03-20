@@ -8,6 +8,8 @@ import scalafx.scene.control.Button
 import scalafx.scene.layout.{BorderPane, StackPane}
 import scalafx.scene.image.{Image, ImageView}
 
+import scala.io.Source
+
 class LobbyScene (
     mainStage: JFXApp3.PrimaryStage,
     selectedScene: ObjectProperty[Scenes],
@@ -24,7 +26,7 @@ class LobbyScene (
     translateY = 140
     alignmentInParent = scalafx.geometry.Pos.Center
     onMouseClicked = (event) =>
-      selectedScene.value = Scenes.ContinueGameScene
+      selectedScene.value = Scenes.NewGameScene
 
   val leaderboardButton = new ImageView:
     image = Image("image/leaderboardButton.png")
@@ -41,5 +43,6 @@ class LobbyScene (
   root = maincontainer
   maincontainer.prefWidth = 1920
   maincontainer.prefHeight = 1080
+
 
 

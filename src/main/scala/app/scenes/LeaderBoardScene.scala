@@ -70,7 +70,6 @@ class LeaderBoardScene (
     image = Image("image/backButton.png")
     onMouseClicked = (event) =>
       selectedScene.value = Scenes.LobbyScene
-      print("ok")
   val resetButton = new ImageView:
     fitWidth = 100
     fitHeight = 100

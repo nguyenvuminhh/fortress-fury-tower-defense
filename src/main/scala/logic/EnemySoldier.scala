@@ -3,21 +3,22 @@ package logic
 import logic.grid.CompassDir.*
 import scalafx.beans.property.DoubleProperty
 import scalafx.scene.image.{Image, ImageView}
-import scalafx.scene.layout.{StackPane, BorderPane}
+import scalafx.scene.layout.{BorderPane, StackPane}
 import scalafx.scene.paint.Color
 import scalafx.scene.shape.Rectangle
 import scalafx.scene.text.FontWeight.Black
 import scalafx.scene.paint.Color.*
 
-import scala.math.{Pi, cos, round, sin, pow}
+import java.io
+import scala.math.{Pi, cos, pow, round, sin}
 import scala.math.BigDecimal.RoundingMode
 
 
 
-abstract class EnemySoldier(game: Game, baseDamage: Int):
-
+abstract class EnemySoldier(game: Game, baseDamage: Int) extends io.Serializable:
 
   val damage: Int = (baseDamage*pow(1.3, game.getWave)).toInt
+  def id: String
   /** HP */
   private var HP = damage
   def getHP = HP
@@ -38,9 +39,12 @@ abstract class EnemySoldier(game: Game, baseDamage: Int):
   def getY = y
   private var pace = 0.2
   private var heading = East
+  
+
 
   /** ADVANCE METHODS */
   val adjustConst = 50-0.3882
+  var step = 0
   def advance() =
     turnDirection match
       case 1 => turnRight()
@@ -50,6 +54,7 @@ abstract class EnemySoldier(game: Game, baseDamage: Int):
     y = BigDecimal(y +heading.yStep*pace).setScale(1, BigDecimal.RoundingMode.HALF_UP).toDouble
     imageView.layoutY = adjustConst*y
     imageView.layoutX = adjustConst*x
+    step += 1
   def turnRight() =
     heading = heading.clockwise
     enemyImage.rotate.value += 90
@@ -85,23 +90,35 @@ abstract class EnemySoldier(game: Game, baseDamage: Int):
     children = Seq(maxHPbar, HPbar)
   val imageView = new BorderPane(enemyImage, null, null, HPimage, null)
 
+  /** LOAD */
+  def load(stringInfo: String) =
+    val info = stringInfo.split("\t").drop(1)
+    for i <- 0 until info(0).toInt do
+      this.advance()
+    HP = (maxHP * info(1).toDouble).toInt
+    widthProperty.value = 50*HPpercentage
+
 case class Infantry(game: Game) extends EnemySoldier(game, 400):
   override val picturePath = "image/infantry.png"
-  override def toString = s"Infantry($getX, $getY)"
+  val id = "i\t"
+  override def toString = s"Infantry\t$step\t$HPpercentage\n"
 end Infantry
 
 case class Cavalry(game: Game) extends EnemySoldier(game, 600):
   override val picturePath = "image/cavalry.png"
-  override def toString = s"Cavalry($getX, $getY)"
+  val id = "c\t"
+  override def toString = s"Cavalry\t$step\t$HPpercentage\n"
 end Cavalry
 
 case class ArmoredCar(game: Game) extends EnemySoldier(game, 800):
   override val picturePath = "image/armoredCar.png"
-  override def toString = s"ArmoredCar($getX, $getY)"
+  val id = "a\t"
+  override def toString = s"ArmoredCar\t$step\t$HPpercentage\n"
 end ArmoredCar
 
 case class Tank(game: Game) extends EnemySoldier(game, 1000):
   override val picturePath = "image/tank.png"
-  override def toString = s"Tank($getX, $getY)"
+  val id = "t\t"
+  override def toString = s"Tank\t$step\t$HPpercentage\n"
 end Tank
 

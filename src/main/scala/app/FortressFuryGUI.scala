@@ -39,10 +39,10 @@ object FortressFuryGUI extends JFXApp3:
     selectedScene.onChange((_, _, newValue) =>
       newValue match
         case Scenes.NewGameScene =>
-          stage.setScene(GameScene(mainStage, selectedScene, new Game(logic.Map1)))
+          stage.setScene(GameScene(mainStage, selectedScene, new Game(logic.Map1), false))
 
         case Scenes.ContinueGameScene =>
-          stage.setScene(GameScene(mainStage, selectedScene, loadGame()))
+          stage.setScene(GameScene(mainStage, selectedScene, new Game(logic.Map1), true))
 
         case Scenes.LobbyScene =>
           stage.setScene(LobbyScene(mainStage, selectedScene))
@@ -54,18 +54,8 @@ object FortressFuryGUI extends JFXApp3:
           stage.setScene(GameOverScene(mainStage, selectedScene))
     )
 
-    mainStage.scene = LobbyScene(mainStage, selectedScene)//GameScene(mainStage, selectedScene, new Game(logic.Map1))
+    mainStage.scene = GameScene(mainStage, selectedScene, new Game(logic.Map1), true) //LobbyScene(mainStage, selectedScene)//
     stage = mainStage
-
-    def loadGame(): Game =
-      val fileInputStream = new FileInputStream("savedGame.ser")
-      val objectInputStream = new ObjectInputStream(fileInputStream)
-      try {
-        objectInputStream.readObject().asInstanceOf[Game]
-      } finally {
-        fileInputStream.close()
-        objectInputStream.close()
-      }
 
   end start
 
