@@ -1,9 +1,11 @@
 package app
 
 enum Scenes:
-  case NewGameScene
-  case ContinueGameScene
+  case NewGameScene1
+  case NewGameScene2
+  case ContinueGameScene1
+  case ContinueGameScene2
   case LobbyScene
-  case LeaderBoardScene
-  case GameOverScene
+  case LeaderboardScene
+  case MapSelectionScene
   

@@ -2,7 +2,7 @@ package logic
 
 import java.io
 
-trait Square extends io.Serializable:
+trait Square:
   def isEmpty: Boolean
   def isPlacable: Boolean
   def tower: Option[Tower]
@@ -15,7 +15,6 @@ class Path extends Square:
   val isPlacable = false
   val tower = None
   def addTower(tower: Tower) = ()
-  def removeTower(tower: Tower) = ()
   def clear() = ()
 
 

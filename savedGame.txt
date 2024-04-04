@@ -1,8 +1,0 @@
-4	1
-340160	6023	4	659
-HQ	27.0	8.0	2	244
-Cannon	3	5	2
-RocketLauncher	28	7	1
-RocketLauncher	28	4	1
-Infantry	263	0.40774487471526194
-n

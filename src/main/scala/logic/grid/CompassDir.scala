@@ -89,27 +89,5 @@ object CompassDir:
   private val WASDToDir  = Map(Key.W  -> North, Key.A    -> West, Key.S   -> South, Key.D    -> East)
   private val KeyToDir   = ArrowToDir ++ WASDToDir
 
-  /*/** Returns the [[CompassDir]] that corresponds to the given arrow key.
-    * For example, the right arrow corresponds to `East`.
-    * @param key  any key on the keyboard
-    * @return one of the four `CompassDir`s; `None` if the given key is not one of the four arrow keys
-    * @see [[fromWASD]], [[fromKey]] */
-  def fromArrowKey(key: Key) = ArrowToDir.get(key)
-
-  /** Returns the [[CompassDir]] that corresponds to the given WASD key.
-    * For example, the D key corresponds to `East`.
-    * @param key  any key on the keyboard
-    * @return one of the four `CompassDir`s; `None` if the given key is not one of the four WASD keys
-    * @see [[fromArrowKey]], [[fromKey]] */
-  def fromWASD(key: Key)     = WASDToDir.get(key)
-
-  /** Returns the [[CompassDir]] that corresponds to the given arrow key.
-    * For example, the right arrow or the D key corresponds to `East`.
-    * @param key  any key on the keyboard
-    * @return one of the four `CompassDir`s; `None` if the given key is not one of the four arrow keys
-    *         or one of the four WASD keys
-    * @see [[fromArrowKey]], [[fromWASD]] */
-  def fromKey(key: Key)      = KeyToDir.get(key)*/ //TODO
-
 end CompassDir
 

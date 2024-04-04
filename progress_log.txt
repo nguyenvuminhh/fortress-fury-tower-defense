@@ -5,17 +5,26 @@ PLAN:
   24.3 – 6.4: Keep working on UI and test the functions via UI.
   7.4 – 17.4: Finish UI and finalize documents.
 
-Sprint 3:
+Sprint 3: 04.04.24
 
   Done:
     - GUI:
       + other scenes
+      + balance the game
     - logic:
       + save and load game
   Tested funcion:
     + load() functions
     + saveGame()
+  Difficulties:
+    + Exception: mutate while iteration. Solved: create a copy before iterating
 
+
+    Time spent: 20h
+
+    Schedule: Ahead
+
+    Goal: The project is basically done. just need some more fixes
 
 Sprint 2: 17.03.24
 

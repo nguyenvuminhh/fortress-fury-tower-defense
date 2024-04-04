@@ -1,34 +1,38 @@
 package app.scenes
 
+/** PACKAGE IMPORT */
+import app.FortressFuryApp.stage
 import app.Scenes
-import app.FortressFuryGUI.stage
+import logic.*
 import logic.grid.GridPos
-import logic.{ArmoredCar, Cannon, Cavalry, EnemySoldier, Game, GunTower, Infantry, Sharpshooter, Tank, Tower, Turret}
-import scalafx.scene.SceneIncludes.jfxNode2sfx
+import scalafx.scene.control.Alert
+import scalafx.scene.control.Alert.AlertType
+
+import scala.io.Source
+
+/** SCALAFX IMPORT */
+import scalafx.Includes.*
 import scalafx.application.{JFXApp3, Platform}
 import scalafx.beans.property.{DoubleProperty, ObjectProperty, StringProperty}
-import scalafx.geometry.Insets
-import scalafx.geometry.Pos.BaselineCenter
-import scalafx.scene.input.{KeyCode, KeyEvent}
+import scalafx.delegate.SFXDelegate
+import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.Scene
+import scalafx.scene.SceneIncludes.jfxNode2sfx
 import scalafx.scene.control.Label
 import scalafx.scene.image.{Image, ImageView}
-import scalafx.scene.layout.{BorderPane, GridPane, HBox, Pane, StackPane, VBox}
+import scalafx.scene.input.{KeyCode, KeyEvent}
+import scalafx.scene.layout.*
+import scalafx.scene.layout.GridPane.{getColumnIndex, getRowIndex}
+import scalafx.scene.paint.Color
 import scalafx.scene.paint.Color.{Black, Blue, Green, Red, Transparent, White}
 import scalafx.scene.shape.Rectangle
 import scalafx.scene.text.{Font, FontWeight, Text, TextFlow}
-import scalafx.scene.layout.GridPane.{getColumnIndex, getRowIndex}
-import scalafx.delegate.SFXDelegate
-import scalafx.Includes.*
-import scalafx.scene.paint.Color
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.collection.mutable.Buffer
+/** OTHER IMPORTS */
 import java.util.{Timer, TimerTask}
-import java.util.concurrent.{Executors, TimeUnit}
-import scala.concurrent.Future
-import scala.io.Source
-import scala.math.min
+import scala.collection.mutable.Buffer
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.math.{cos, min}
 import scala.util.Random
 
 class GameScene (
@@ -38,40 +42,28 @@ class GameScene (
     needLoad: Boolean
 ) extends Scene:
 
-
-
   /** COLOR VARIABLES */
   val buttonColor = Color.web("#BF9000") //DARK BROWN
   val topTextColor = "#000000"
   val fontName = "Gotham"
-  val strokeColor = Black
   val bgColor = "#ffffff"
 
   /** UI VARIABLES */
   val squareside = 50
   val colNum = 32
   val rowNum = 11
-  var selectedGunIndex = -1
-  var gunNameCollection = Vector("Sharpshooter", "Cannon", "Turret", "GrenadeLauncher", "Sniper", "RocketLauncher")
-  var selectedGridPos = GridPos(-1, -1)
+  private var selectedGunIndex = -1
+  private var gunNameCollection: Vector[(String, Int)] = Vector(("Sharpshooter", 120), ("Cannon", 150), ("Turret", 200), ("GrenadeLauncher", 250), ("Sniper", 300), ("RocketLauncher", 500))
+  private var selectedGridPos = GridPos(-1, -1)
   val widthPropertyOfHQHP = DoubleProperty(50*game.headquarter.HPpercentage)
 
   /** GAME VARIABLES */
-  def wave = (game.getWave)
+  def wave = game.getWave
   def gold = game.getGold
   def score = game.getScore
   def HP = game.headquarter.getHP.toString + "/" + game.headquarter.getMaxHP.toString
-  val gunPrice = Vector(120, 150, 200, 250, 300, 500)
-
 
   /** IMAGE VARIABLES */
-  val sqCannon = Image("image/sqCannon.png")
-  val sqSharpshooter = Image("image/sqSharpshooter.png")
-  val sqSniper = Image("image/sqSniper.png")
-  val sqTurret = Image("image/sqTurret.png")
-  val sqGrenadeLauncher = Image("image/sqGrenadeLauncher.png")
-  val sqRocketLauncher = Image("image/sqRocketLauncher.png")
-  val sqGunCollection = Vector(sqSharpshooter, sqCannon, sqTurret, sqGrenadeLauncher, sqSniper, sqRocketLauncher)
   val poisonPic = Image("image/poison.png")
   val freezePic = Image("image/freeze.png")
   val ragePic = Image("image/rage.png")
@@ -80,23 +72,21 @@ class GameScene (
 
   /** GRID */
   val gridMap = new GridPane():
-    alignmentInParent = scalafx.geometry.Pos.Center
     maxHeight = rowNum * squareside
     maxWidth = colNum * squareside
     vgap = -1
     hgap = -1
-    alignmentInParent = scalafx.geometry.Pos.TopLeft
     for
       row <- 0 until rowNum
       col <- 0 until colNum
     do
-      val kind = squaretype(col, row)
+      val squareType = game.map.squareType(col, row)
       val square = new StackPane:
         val squareImage = new ImageView:
           image =
-            if kind == "buildable" then
-              new Image("image/" + kind + min(Random.nextInt(30)+1, 7).toString + ".png")
-            else new Image("image/" + kind +  ".png")
+            if squareType == "buildable" then
+              new Image("image/" + squareType + min(Random.nextInt(30)+1, 7).toString + ".png")
+            else new Image("image/" + squareType +  ".png")
           fitHeight = squareside
           fitWidth = squareside
 
@@ -110,25 +100,26 @@ class GameScene (
             width = 50
             height = 5
             fill = Color.Black
-            alignmentInParent = scalafx.geometry.Pos.TopLeft
+            alignmentInParent = Pos.TopLeft
           val HPbar = new Rectangle:
             width <== widthPropertyOfHQHP
             height = 5
             fill = Color.Green
-            alignmentInParent = scalafx.geometry.Pos.TopLeft
+            alignmentInParent = Pos.TopLeft
           children = Seq(maxHPbar, HPbar)
-          alignmentInParent = scalafx.geometry.Pos.TopCenter
+          alignmentInParent = Pos.TopCenter
 
         if GridPos(col, row) == game.map.HQSquare then
           gunImage.image = Image("image/hqImage.png")
           children = Seq(squareImage, gunImage, HPimage)
         else children = Seq(squareImage, gunImage)
 
-        onMouseClicked = (event) =>
+        onMouseClicked = () =>
           if selectedGunIndex != -1 then
             val success = game.place(gunNameCollection(selectedGunIndex), col, row)
             if success then
-              gunImage.image = Image("image/ci" + gunNameCollection(selectedGunIndex) + ".png")
+              val gun = game.map.elementAt(GridPos(col, row)).tower.get.asInstanceOf[GunTower]
+              gunImage.image <== gun.image
               gunImage.rotate <== game.map.elementAt(GridPos(col, row)).tower.get.asInstanceOf[GunTower].prevAngle
               updateGold()
             selectedGunIndex = -1
@@ -182,23 +173,23 @@ class GameScene (
   val iconSize = 50
 
   /** SETTING BUTTON */
-  val setting = new StackPane:
-    val settingBg = new Rectangle:
+  val pause = new StackPane:
+    val pauseBg = new Rectangle:
       arcHeight = 30
       arcWidth = 30
       stroke = White
       height = bgSize
       width = bgSize
       fill = buttonColor
-    val settingIcon = new ImageView:
+    val pauseIcon = new ImageView:
       fitHeight = iconSize
       fitWidth = iconSize
       image = Image("image/pauseButton.png")
       preserveRatio = true
 
-    children = Seq(settingBg, settingIcon)
-    alignment = scalafx.geometry.Pos.Center
-    onMouseClicked = (event) =>
+    children = Seq(pauseBg, pauseIcon)
+    alignment = Pos.Center
+    onMouseClicked = () =>
       if !game.getIsPaused then game.pause() else game.resume()
 
   /** SPEEDUP BUTTON */
@@ -215,13 +206,25 @@ class GameScene (
       image = Image("image/speedupButton.png")
       preserveRatio = true
     children = Seq(speedupBg, speedupIcon)
-    alignment = scalafx.geometry.Pos.Center
-    onMouseClicked = (event) =>
-      game.speedup()
+    alignment = Pos.Center
+    onMouseClicked = () => game.speedup()
 
-
-
-
+    /** QUIT */
+  val quit = new StackPane:
+    val quitBg = new Rectangle:
+      arcHeight = 30
+      arcWidth = 30
+      height = bgSize
+      width = bgSize
+      fill = buttonColor
+    val quitIcon = new ImageView:
+      fitHeight = iconSize
+      fitWidth = iconSize
+      image = Image("image/quitButton.png")
+      preserveRatio = true
+    children = Seq(quitBg, quitIcon)
+    alignment = Pos.Center
+    onMouseClicked = () => game.speedup()
 
   /** TIME CLOCK */
   def elapsedTime: Long = game.getSurvivingTimeInOneFifthSec/5
@@ -237,9 +240,9 @@ class GameScene (
     timerText.text = f"$hours%02d:$minutes%02d:$seconds%02d"
     //UPDATE SCORE AND GOLD AND HP
     scoreProperty.value = game.getScore.toString
+    updateGold()
     if game.getSurvivingTimeInOneFifthSec%50 == 0 then
       game.giveGold()
-      updateGold()
     HPProperty.value = HP
     //ADVANCE THE ENEMY
     if game.getFreezeEndTime == 0 then
@@ -271,7 +274,8 @@ class GameScene (
         paneForEnemy.children += enemy.imageView})
       game.toBeDeployed = game.toBeDeployed.drop(1)
     //SHOOT
-    game.gunTowers.foreach(_.shoot())
+    val temp = game.gunTowerCollection
+    temp.foreach(_.shoot())
     //END ABILITY
     if game.getSurvivingTimeInOneFifthSec == game.getRageEndTime.toLong then game.derage()
     if game.getSurvivingTimeInOneFifthSec == game.getFreezeEndTime.toLong then game.defrost()
@@ -309,17 +313,17 @@ class GameScene (
     priceLabel.font = Font.font("Arial", FontWeight.Bold, null, 20)
 
     val contentOfButton = new VBox:
-      alignment = BaselineCenter
+      alignment = Pos.BaselineCenter
       children = Array(abilityPicture, priceLabel)
       padding = Insets(btWidth/15, 0, 0, 0)
 
     new StackPane:
       maxHeight = btHeight
       children = Seq(bg, contentOfButton)
-      alignment = scalafx.geometry.Pos.Center
-      onMouseClicked = (event) =>
+      alignment = Pos.Center
+      onMouseClicked = () =>
         selectedGunIndex = i
-          onMouseClicked = (event) =>
+          onMouseClicked = () =>
             i match
               case 0 => game.poison()
               case 1 => game.freeze()
@@ -338,16 +342,15 @@ class GameScene (
       val gunPictureContent = new ImageView:
         fitWidth = btWidth*4/5
         fitHeight = btWidth*4/5
-
-        image = sqGunCollection(i)
+        image = Image(s"image/gunIcon${i+1}.png")
         padding = Insets(btWidth/15, 0, 0, 0)
       children += gunPictureContent
 
-    val priceLabel = Label(s"${gunPrice(i)}")
+    val priceLabel = Label(s"${gunNameCollection(i)._2}")
     priceLabel.font = Font.font("Arial", FontWeight.Bold, null, 20)
 
     val contentOfButton = new VBox:
-      alignment = BaselineCenter
+      alignment = Pos.BaselineCenter
       children = Array(gunPicture, priceLabel)
       padding = Insets(btWidth/15, 0, 0, 0)
   
@@ -355,8 +358,8 @@ class GameScene (
     new StackPane:
       maxHeight = btHeight
       children = Seq(bg, contentOfButton)
-      alignment = scalafx.geometry.Pos.Center
-      onMouseClicked = (event) =>
+      alignment = Pos.Center
+      onMouseClicked = () =>
         selectedGunIndex = i
         bottomCenter.children = game.infoGunTowers(i).description
 }
@@ -377,7 +380,7 @@ class GameScene (
   val waveEnemyVbox = new StackPane:
     val content = new VBox:
       children = Seq(wavesSurvived, enemiesKilled)
-      alignment = scalafx.geometry.Pos.Center
+      alignment = Pos.Center
     val bg = new Rectangle:
       height = 100
       width = 300
@@ -389,15 +392,16 @@ class GameScene (
     padding = Insets(50, 0, 0, 0)
     children = Seq(bg, content)
 
-  val playAgain = new StackPane:
+  val returnHome = new StackPane:
     val content = new Text:
-      text = "PLAY AGAIN"
+      text = "RETURN HOME"
       style = "-fx-font-family: Gotham; -fx-font-weight: bold; -fx-font-size: 25;"
+      onMouseClicked = (_) => selectedScene.value = Scenes.LobbyScene
     val bg = new Rectangle:
       width = 200
       height = 50
       arcWidth = 30
-      arcHeight = 30
+      arcHeight = 30//TODO: QUIT
       fill = Color.web("#F4C55E") //LIGHT BROWN
       stroke = Color.web("#6C5200")
       strokeWidth = 5
@@ -406,9 +410,9 @@ class GameScene (
 
   val statContent = new VBox:
     spacing = 5
-    alignment = scalafx.geometry.Pos.Center
+    alignment = Pos.Center
     prefWidth = 200
-    children = Seq(gameOver, scoreStat, survivingTime, waveEnemyVbox, playAgain)
+    children = Seq(gameOver, scoreStat, survivingTime, waveEnemyVbox, returnHome)
   val statBg = new Rectangle:
     height = 500
     width = 400
@@ -433,11 +437,11 @@ class GameScene (
     padding = Insets(0, 20, 10, 20)
     children = Seq(levelWaveLabel, goldText, HPText)
   val topcenter = new VBox:
-    alignment = scalafx.geometry.Pos.Center
+    alignment = Pos.Center
     spacing = 10
     children = Seq(scoreText, timerText)
   val topright = new HBox:
-    children = Seq(speedup, setting)
+    children = Seq(quit, speedup, pause)
     padding = Insets(0, 70, 0, 0)
     spacing = 10
   val top = new BorderPane(topcenter, null, topright, null, topleft)
@@ -445,16 +449,16 @@ class GameScene (
   /** Bottom */
   val bottomRight = new HBox:
     children = gunButtonsArray
-    spacing = 20
+    spacing = 15
     padding = Insets(0, 70, 10, 0)
-    alignment = scalafx.geometry.Pos.Center
+    alignment = Pos.Center
   val bottomLeft = new HBox:
     children = abilityButtonArray
-    spacing = 10
+    spacing = 15
     padding = Insets(0, 0 , 10, 15)
-    alignment = scalafx.geometry.Pos.Center
+    alignment = Pos.Center
   private var bottomCenter = new StackPane:
-    alignment = scalafx.geometry.Pos.Center
+    alignment = Pos.Center
     padding = Insets(0, 0 , 10, 0)
     maxHeight = 130
     maxWidth = 300
@@ -469,40 +473,10 @@ class GameScene (
   root.value.style = s"-fx-background-color: $bgColor;"
 
   /** Helper methods */
-  def squaretype(x: Int, y: Int) =
-    val h1   = ((x >= 0 && x <= 3) || (x >= 8 && x <= 13) || (x >= 22 && x <= 26))  && (y == 4)
-    val h2   = (x >= 5 && x <= 13)                                                  && (y == 8)
-    val h3   = (x >= 8 && x <= 16)                                                  && (y == 2)
-    val h4   = (x >= 18 && x <= 20)                                                 && (y == 6)
-    val v1   = (x == 4 || x == 14 || x == 27)                                       && (y >= 5 && y <= 7)
-    val v2   = (x == 7)                                                             && (y == 3)
-    val v3   = (x == 17)                                                            && (y >= 3 && y <= 5)
-    val v4   = (x == 21)                                                            && (y == 5)
-    val c1   = Vector((4, 4), (14, 4), (17, 2), (27, 4)).contains((x,y))
-    val c2   = Vector((4, 8), (7, 4), (17, 6)).contains((x,y))
-    val c3   = Vector((14, 8), (21, 6)).contains((x,y))
-    val c4   = Vector((7, 2), (21, 4)).contains((x,y))
-    if h1 || h2 || h3 || h4 then "horizontal"
-    else if v1 || v2 || v3 || v4 then "vertical"
-    else if c1 then "corner1"
-    else if c2 then "corner2"
-    else if c3 then "corner3"
-    else if c4 then "corner4"
-    else "buildable"
   def squareInGrid(pos: GridPos, gridd: GridPane) =
     gridd.children.find(node => getRowIndex(node) == pos.y && getColumnIndex(node) == pos.x).get.asInstanceOf[javafx.scene.layout.StackPane]
-  def miniSquarePosToGridPos(col: Int, row: Int, miniCol: Int, miniRow: Int) =
-    val x = col + 1.0 + 0.2 * miniCol
-    val y = row + 1.0 + 0.2 * miniRow
-    (x, y)
-  def gridPosToMiniSquarePos(x: Double, y: Double) =
-    val col = x.toInt - 1.0
-    val row = y.toInt - 1.0
-    val miniCol = (x - col*1.0)/0.2
-    val miniRow = (y - row*1.0)/0.2
-    (col, row, miniCol.toInt, miniRow.toInt)
   def unit(amount: Int, unitType: Int): Vector[EnemySoldier] =
-    Vector.tabulate(amount){i =>
+    Vector.tabulate(amount){_ =>
       unitType match
         case 1 => Infantry(game)
         case 2 => Cavalry(game)
@@ -514,16 +488,14 @@ class GameScene (
     def c = wave / 3 + 5
     def d = wave / 2 + 10
     val troops = unit(a, 4) ++ unit(b, 3) ++ unit(c, 2) ++ unit(d, 1)
-    val timer = new Timer()
-    var index = 0
     if wave != 0 then game.toBeDeployed = troops else ()
 
-//TODO: ask about java thing
   onKeyTyped = (ke: KeyEvent) =>
     ke.character.toLowerCase match
       /** REMOVE GUNS */
       case "r" =>
         if selectedGridPos != GridPos(-1, -1) then
+          squareInGrid(selectedGridPos, gridMap).children(1).asInstanceOf[javafx.scene.image.ImageView].image.unbind()
           squareInGrid(selectedGridPos, gridMap).children(1).asInstanceOf[javafx.scene.image.ImageView].image = clearPlaceHolder
           game.remove(selectedGridPos)
           selectedGridPos = GridPos(-1, -1)
@@ -539,7 +511,7 @@ class GameScene (
       case "f" => widthPropertyOfHQHP.value = 0
       case "s" => game.saveGame()
       case "g" => game.enemies.map(_.toString).foreach(println(_))
-      case e => ()
+      case _ => ()
 
   widthPropertyOfHQHP.onChange((_, _, newValue) =>
     if newValue.intValue() <= 0 then
@@ -550,7 +522,8 @@ class GameScene (
       wavesSurvived.text = "Survived " + ((wave-1).toString) + " waves"
       Platform.runLater(() -> center.children.append(stat)))
 
-  if needLoad then
+  val data = Source.fromFile("src/main/resources/savedGame.txt")
+  if data.getLines().nonEmpty && needLoad then //TODO: fix
     game.load()
     game.enemies.foreach(enemy =>
       enemy.enemyImage.image = Image(enemy.picturePath)

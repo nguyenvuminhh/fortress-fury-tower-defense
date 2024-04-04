@@ -5,17 +5,17 @@ import scalafx.beans.property.DoubleProperty
 import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.layout.{BorderPane, StackPane}
 import scalafx.scene.paint.Color
+import scalafx.scene.paint.Color.*
 import scalafx.scene.shape.Rectangle
 import scalafx.scene.text.FontWeight.Black
-import scalafx.scene.paint.Color.*
 
 import java.io
-import scala.math.{Pi, cos, pow, round, sin}
 import scala.math.BigDecimal.RoundingMode
+import scala.math.{Pi, cos, pow, round, sin}
 
 
 
-abstract class EnemySoldier(game: Game, baseDamage: Int) extends io.Serializable:
+abstract class EnemySoldier(game: Game, baseDamage: Int):
 
   val damage: Int = (baseDamage*pow(1.3, game.getWave)).toInt
   def id: String
@@ -39,8 +39,6 @@ abstract class EnemySoldier(game: Game, baseDamage: Int) extends io.Serializable
   def getY = y
   private var pace = 0.2
   private var heading = East
-  
-
 
   /** ADVANCE METHODS */
   val adjustConst = 50-0.3882
@@ -93,30 +91,29 @@ abstract class EnemySoldier(game: Game, baseDamage: Int) extends io.Serializable
   /** LOAD */
   def load(stringInfo: String) =
     val info = stringInfo.split("\t").drop(1)
-    for i <- 0 until info(0).toInt do
-      this.advance()
+    for _ <- 0 until info(0).toInt do this.advance()
     HP = (maxHP * info(1).toDouble).toInt
     widthProperty.value = 50*HPpercentage
 
-case class Infantry(game: Game) extends EnemySoldier(game, 400):
+case class Infantry(game: Game) extends EnemySoldier(game, 200):
   override val picturePath = "image/infantry.png"
   val id = "i\t"
   override def toString = s"Infantry\t$step\t$HPpercentage\n"
 end Infantry
 
-case class Cavalry(game: Game) extends EnemySoldier(game, 600):
+case class Cavalry(game: Game) extends EnemySoldier(game, 400):
   override val picturePath = "image/cavalry.png"
   val id = "c\t"
   override def toString = s"Cavalry\t$step\t$HPpercentage\n"
 end Cavalry
 
-case class ArmoredCar(game: Game) extends EnemySoldier(game, 800):
+case class ArmoredCar(game: Game) extends EnemySoldier(game, 600):
   override val picturePath = "image/armoredCar.png"
   val id = "a\t"
   override def toString = s"ArmoredCar\t$step\t$HPpercentage\n"
 end ArmoredCar
 
-case class Tank(game: Game) extends EnemySoldier(game, 1000):
+case class Tank(game: Game) extends EnemySoldier(game, 800):
   override val picturePath = "image/tank.png"
   val id = "t\t"
   override def toString = s"Tank\t$step\t$HPpercentage\n"

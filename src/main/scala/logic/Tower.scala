@@ -1,8 +1,9 @@
 package logic
-import scalafx.beans.property.DoubleProperty
+import scalafx.beans.property.{DoubleProperty, ObjectProperty}
 import scalafx.geometry.Insets
 import scalafx.scene.Node
 import scalafx.scene.control.Label
+import scalafx.scene.image.Image
 import scalafx.scene.layout.{HBox, StackPane, VBox}
 import scalafx.scene.paint.Color
 import scalafx.scene.paint.Color.Blue
@@ -11,13 +12,13 @@ import scalafx.scene.text.TextAlignment.Center
 import scalafx.scene.text.{Text, TextFlow}
 
 import java.io
-import scala.math.{atan2, min, pow, sqrt, toDegrees}
 import scala.concurrent.*
-import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.*
 import scala.math.BigDecimal.RoundingMode
+import scala.math.{atan2, min, pow, sqrt, toDegrees}
 
-trait Tower extends io.Serializable:
+trait Tower:
   def upgrade(): Unit
   def upgradePrice: Int
   def description: Seq[Node]
@@ -29,7 +30,6 @@ case class Headquarter(x: Double, y: Double) extends Tower:
 
   /** LEVEL */
   private var level = 1 //NEED SAVING
-  def getLevel = level
 
   /** HP */
   private var HP = 2000
@@ -57,7 +57,7 @@ case class Headquarter(x: Double, y: Double) extends Tower:
   /** LOAD */
   def load(stringInfo: String) =
     val info = stringInfo.split("\t").takeRight(2)
-    for i <- 0 until info(0).toInt do this.upgrade()
+    for _ <- 0 until info(0).toInt do this.upgrade()
     HP = info(1).toInt
 
     
@@ -74,7 +74,6 @@ case class Headquarter(x: Double, y: Double) extends Tower:
         children = Seq(statText, valueText)
     )
     val info = new VBox:
-      //alignment = scalafx.geometry.Pos.Center
       padding = Insets(10, 20, 0, 20)
       val heading = new Label("Headquarter")
       heading.style = s"-fx-font-size: 20px; -fx-font-weight: bold;"
@@ -87,8 +86,8 @@ case class Headquarter(x: Double, y: Double) extends Tower:
           children = textFlows.slice(2, 4)
         children = Seq(column1, column2)
       children = Seq(heading, content)
-
-      spacing = 20 //TODO: edit spacing, alignment
+      spacing = 20
+      
     val bg = new Rectangle:
       width = 300
       height = 130
@@ -104,9 +103,8 @@ class GunTower(val name: String, x: Int, y: Int, var damage: Int, var fireRate: 
   private var rageConst = 1.0
   def getDamage = (damage*rageConst).toInt
   def getFireRate = fireRate*1.0/rageConst
-  def roundedFireRate = BigDecimal(fireRate/levelCoef).setScale(1, BigDecimal.RoundingMode.HALF_UP).toDouble
+  def roundedFireRate = BigDecimal(getFireRate/levelCoef).setScale(1, BigDecimal.RoundingMode.HALF_UP).toDouble
   def getRange = range*rageConst
-
 
   /** GET LOCATION */
   val getX = x
@@ -128,31 +126,34 @@ class GunTower(val name: String, x: Int, y: Int, var damage: Int, var fireRate: 
     if target.nonEmpty then
       prevAngle.value = toDegrees(atan2((y*1.0 - target.get.getY),(x*1.0 - target.get.getX)))
 
+  val image = ObjectProperty(Image("image/ci" + name + ".png"))
   /** LOAD */
   def load(stringInfo: String) =
     val info = stringInfo.split("\t").takeRight(1).head.toInt
-    for i <- 0 until info do this.upgrade()
+    for _ <- 0 until info do this.upgrade()
+
   /** SHOOT METHODS */
   var onCoolDown = false
   def target: Option[EnemySoldier] = game.enemies.find(enemy => distanceTo(enemy) <= getRange)
-
   def shoot() =
     if !onCoolDown && target.nonEmpty then
-      val startTime = System.currentTimeMillis()
       target.get.minusHP(getDamage)
       onCoolDown = true
       target.get.widthProperty.value = (50*(target.get.HPpercentage))
       updateRotationAngle
+      image.value = Image("image/ci" + name + "Shoot.png")
       Future {
-        Thread.sleep(((getFireRate*100)/game.pace).toLong)
+        Thread.sleep(((getFireRate*50)/game.pace).toLong)
+        image.value = Image("image/ci" + name + ".png")
+        Thread.sleep(((getFireRate*950)/game.pace).toLong)
         onCoolDown = false}
-
   def distanceTo(enemy: EnemySoldier) =
     sqrt(pow((x-enemy.getX), 2) + pow((y-enemy.getY), 2))
 
   /** ABILITY */
-  def rage = rageConst = 1.15
-  def derage = rageConst = 1
+  def rage() = rageConst = 1.15
+  def derage() = rageConst = 1
+
   /** UI */
   def description =
     val stats = Seq("Level: " -> level, "Upgrade Price: " -> upgradePrice,
@@ -166,7 +167,6 @@ class GunTower(val name: String, x: Int, y: Int, var damage: Int, var fireRate: 
         children = Seq(statText, valueText)
     )
     val info = new VBox:
-      //alignment = scalafx.geometry.Pos.Center
       padding = Insets(10, 20, 0, 20)
       val heading = new Label(if getY == -1 then name else s"$name ($getX, $getY)")
       heading.style = s"-fx-font-size: 20px; -fx-font-weight: bold;"
@@ -179,8 +179,8 @@ class GunTower(val name: String, x: Int, y: Int, var damage: Int, var fireRate: 
           children = textFlows.slice(3, 6)
         children = Seq(column1, column2)
       children = Seq(heading, content)
-
-      spacing = 20 //TODO: edit spacing, alignment
+      spacing = 20
+      
     val bg = new Rectangle:
       width = 300
       height = 130
@@ -194,9 +194,9 @@ class GunTower(val name: String, x: Int, y: Int, var damage: Int, var fireRate: 
 
 end GunTower
 
-case class Sharpshooter(x: Int, y: Int, game: Game) extends GunTower("Sharpshooter", x, y, 30, 0.8, 6.0, 120, game: Game)
-case class Cannon(x: Int, y: Int, game: Game) extends GunTower("Cannon", x, y, 50, 1.0, 1.5, 150, game: Game)
-case class Turret(x: Int, y: Int, game: Game) extends GunTower("Turret", x, y, 20, 0.4, 2.3, 200, game: Game)
-case class Sniper(x: Int, y: Int, game: Game) extends GunTower("Sniper", x, y, 250, 3.0, 3.0, 300, game: Game)
-case class GrenadeLauncher(x: Int, y: Int, game: Game) extends GunTower("GrenadeLauncher", x, y, 100, 1.0, 1.0, 250, game: Game)
-case class RocketLauncher(x: Int, y: Int, game: Game) extends GunTower("RocketLauncher", x, y, 500, 4.0, 5.0, 500, game: Game)
+case class Sharpshooter(x: Int, y: Int, game: Game) extends GunTower("Sharpshooter", x, y, 30, 0.8, 7.0, 120, game: Game)
+case class Cannon(x: Int, y: Int, game: Game) extends GunTower("Cannon", x, y, 60, 0.6, 3, 150, game: Game)
+case class Turret(x: Int, y: Int, game: Game) extends GunTower("Turret", x, y, 60, 0.6, 5.0, 200, game: Game)
+case class Sniper(x: Int, y: Int, game: Game) extends GunTower("Sniper", x, y, 250, 3.0, 7.0, 300, game: Game)
+case class GrenadeLauncher(x: Int, y: Int, game: Game) extends GunTower("GrenadeLauncher", x, y, 180, 1.0, 3.0, 250, game: Game)
+case class RocketLauncher(x: Int, y: Int, game: Game) extends GunTower("RocketLauncher", x, y, 350, 1.4, 5.0, 500, game: Game)

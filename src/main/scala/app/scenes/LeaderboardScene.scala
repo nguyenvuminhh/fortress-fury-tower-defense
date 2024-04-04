@@ -1,25 +1,27 @@
 package app.scenes
 
 import app.Scenes
+import scalafx.Includes.*
 import scalafx.application.JFXApp3
 import scalafx.beans.property.{ObjectProperty, StringProperty}
 import scalafx.collections.ObservableBuffer
+import scalafx.delegate.SFXDelegate
+import scalafx.geometry.Pos.TopCenter
+import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.Scene
 import scalafx.scene.control.{TableColumn, TableView}
-import scalafx.delegate.SFXDelegate
-import scalafx.Includes.*
-import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.effect.BlendMode.Green
 import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.layout.{BorderPane, HBox, StackPane, VBox}
 import scalafx.scene.paint.Color
-import scalafx.scene.text.Text
-import scalafx.scene.shape.Rectangle
 import scalafx.scene.paint.Color.*
+import scalafx.scene.shape.Rectangle
+import scalafx.scene.text.Text
+import scalafx.geometry.Pos.*
 
 import scala.io.Source
 
-class LeaderBoardScene (
+class LeaderboardScene(
     mainStage: JFXApp3.PrimaryStage,
     selectedScene: ObjectProperty[Scenes],
 ) extends Scene:
@@ -30,11 +32,12 @@ class LeaderBoardScene (
   try {
       for (line <- data.getLines) {
         val date = line.split("\t").head
-        val score = line.split("\t")(1)
-        val survivingTime = secondToHMS(line.split("\t")(2))
-        val wavesSurvived = line.split("\t")(3)
-        val enemiesKilled = line.split("\t")(4)
-        dataRow = dataRow.appended(Seq(date, score, survivingTime, wavesSurvived, enemiesKilled))
+        val map = line.split("\t")(1)
+        val score = line.split("\t")(2)
+        val survivingTime = secondToHMS(line.split("\t")(3))
+        val wavesSurvived = line.split("\t")(4)
+        val enemiesKilled = line.split("\t")(5)
+        dataRow = dataRow.appended(Seq(date, map, score, survivingTime, wavesSurvived, enemiesKilled))
       }
   } catch {
     case e: Exception => println(s"An error occurred: ${e.getMessage}")
@@ -42,12 +45,13 @@ class LeaderBoardScene (
     data.close()
   }
   def tableLength = math.min(dataRow.length+1, 10)
-  val dataRowSorted = Seq(Seq("Date", "Score", "Surviving Time", "Waves Survived", "Enemies Killed")) ++ dataRow.sortBy(row => row(1).toLong).reverse
+  val dataRowSorted = Seq(Seq("Date", "Map",  "Score", "Surviving Time", "Waves Survived", "Enemies Killed")) ++ dataRow.sortBy(row => row(1).toLong).reverse
 
   val table = new VBox:
     children = Seq.tabulate(tableLength)(i =>
       val row = new HBox:
-        children = Seq.tabulate(5)(j =>
+        alignment = Center
+        children = Seq.tabulate(6)(j =>
           new StackPane:
             val bg = new Rectangle:
               width = 150
@@ -57,35 +61,26 @@ class LeaderBoardScene (
             text.style = if i == 0 then s"-fx-font-family: Gotham; -fx-font-weight: bold; -fx-font-size: 15;" else s"-fx-font-family: Gotham; -fx-font-size: 15;"
             children = Seq(bg, text);)
       row)
-    alignmentInParent = scalafx.geometry.Pos.TopCenter
+    alignment = Center
+    translateY = 50
 
   val banner = new ImageView:
-    image = Image("image/banner.png")
+    image = Image("image/leaderboardBanner.png")
     fitWidth = 500
     preserveRatio = true
+    alignmentInParent = TopCenter
 
   val backButton = new ImageView:
     fitWidth = 100
     fitHeight = 100
     image = Image("image/backButton.png")
-    onMouseClicked = (event) =>
-      selectedScene.value = Scenes.LobbyScene
-  val resetButton = new ImageView:
-    fitWidth = 100
-    fitHeight = 100
-    image = Image("image/backButton.png")
-    onMouseClicked = (event) => selectedScene.value = Scenes.LobbyScene
-  val center = new StackPane:
-    children += table
-    alignment = scalafx.geometry.Pos.TopCenter
-    padding = Insets(0, 0, 0, 550) //TODO: ask about alignment
-  val top = new BorderPane(banner, null, resetButton, null, backButton)
-  top.padding = Insets(20, 20, 20, 20)
+    margin = Insets(20)
+    alignmentInParent = TopLeft
+    onMouseClicked = () => selectedScene.value = Scenes.LobbyScene
 
-  val maincontainer = new BorderPane(center, top, null, null, null)
-
+  val maincontainer = new StackPane:
+    children = Seq(banner, backButton, table)
   root = maincontainer
-
 
   def secondToHMS(second: String) =
     val sec = second.toLong
