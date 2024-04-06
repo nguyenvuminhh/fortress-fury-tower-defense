@@ -8,6 +8,7 @@ import logic.grid.GridPos
 import scalafx.scene.control.Alert
 import scalafx.scene.control.Alert.AlertType
 
+import java.io.{File, FileWriter, PrintWriter}
 import scala.io.Source
 
 /** SCALAFX IMPORT */
@@ -224,7 +225,9 @@ class GameScene (
       preserveRatio = true
     children = Seq(quitBg, quitIcon)
     alignment = Pos.Center
-    onMouseClicked = () => game.speedup()
+    onMouseClicked = () =>
+      game.saveGame()
+      selectedScene.value = Scenes.LobbyScene
 
   /** TIME CLOCK */
   def elapsedTime: Long = game.getSurvivingTimeInOneFifthSec/5
@@ -508,11 +511,9 @@ class GameScene (
       /** UPGRADE GUN */
       case "u" =>
         if selectedGridPos != GridPos(-1, -1) then game.upgrade(selectedGridPos)
-      case "f" => widthPropertyOfHQHP.value = 0
-      case "s" => game.saveGame()
-      case "g" => game.enemies.map(_.toString).foreach(println(_))
       case _ => ()
 
+  /** DETECTING GAMEOVER */
   widthPropertyOfHQHP.onChange((_, _, newValue) =>
     if newValue.intValue() <= 0 then
       game.saveRecord()
@@ -522,6 +523,7 @@ class GameScene (
       wavesSurvived.text = "Survived " + ((wave-1).toString) + " waves"
       Platform.runLater(() -> center.children.append(stat)))
 
+  /** LOAD GAME */
   val data = Source.fromFile("src/main/resources/savedGame.txt")
   if data.getLines().nonEmpty && needLoad then //TODO: fix
     game.load()
@@ -533,4 +535,9 @@ class GameScene (
       squareInGrid(gridPos, gridMap).children(1).asInstanceOf[javafx.scene.image.ImageView].image = Image("image/ci" + gun.name + ".png")
       squareInGrid(gridPos, gridMap).children(1).asInstanceOf[javafx.scene.image.ImageView].rotate <== gun.prevAngle)
     widthPropertyOfHQHP.value = 50*game.headquarter.HPpercentage
+  data.close()
 
+  /** DELETE THE SAVED GAME FILE */
+  val file = new File("src/main/resources/savedGame.txt")
+  val writer = new PrintWriter(file)
+  writer.close()

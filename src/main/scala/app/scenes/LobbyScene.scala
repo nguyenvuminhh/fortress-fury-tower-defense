@@ -43,7 +43,7 @@ class LobbyScene (
 
   val container = new StackPane:
     if dataToSeq.nonEmpty then
-      //val mapType = dataToSeq(1).split("\t")(7).toInt
+      val mapType = dataToSeq(1).split("\t")(7).toInt
       val continueButton = new ImageView:
         image = Image("image/continueButton.png")
         fitWidth <== mainStage.width/3.5

@@ -119,7 +119,6 @@ class Game (val map: Map):
     val data = Source.fromFile("src/main/resources/savedGame.txt")
     if data.nonEmpty then
       val seqStringInfo = data.getLines().toSeq
-      print("empty")
       val lineIndex = seqStringInfo.head.split("\t").map(_.toInt)
       loadTower(seqStringInfo.slice(2, lineIndex(0) + 2))
       loadEnemies(seqStringInfo.slice(lineIndex(0) + 2, lineIndex(0) + 2 + lineIndex(1)))
@@ -176,7 +175,6 @@ class Game (val map: Map):
     if gold >= abilityPrice then
       gold -= abilityPrice
       freezeEndTime = survivingTimeInOneFifthSec + 15*5
-      print("fr")
   def defrost() = freezeEndTime = 0
   //POISON
   def poison() =
