@@ -73,8 +73,6 @@ class GameScene (
 
   /** GRID */
   val gridMap = new GridPane():
-    maxHeight = rowNum * squareside
-    maxWidth = colNum * squareside
     vgap = -1
     hgap = -1
     for
@@ -448,7 +446,7 @@ class GameScene (
     padding = Insets(0, 70, 0, 0)
     spacing = 10
   val top = new BorderPane(topcenter, null, topright, null, topleft)
-
+  top.prefWidthProperty().bind(mainStage.width)
   /** Bottom */
   val bottomRight = new HBox:
     children = gunButtonsArray
@@ -467,12 +465,9 @@ class GameScene (
     maxWidth = 300
   val bottom = new BorderPane(bottomCenter, null, bottomRight, null, bottomLeft)
 
-
   /** Root */
   val maincontainer = BorderPane(center, top, null, bottom, null)
   root = maincontainer
-  maincontainer.prefWidth = 1920
-  maincontainer.prefHeight = 1080
   root.value.style = s"-fx-background-color: $bgColor;"
 
   /** Helper methods */
@@ -541,3 +536,6 @@ class GameScene (
   val file = new File("src/main/resources/savedGame.txt")
   val writer = new PrintWriter(file)
   writer.close()
+
+  println(paneForEnemy.widthProperty().value)
+

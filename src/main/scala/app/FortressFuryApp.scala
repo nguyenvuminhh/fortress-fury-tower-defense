@@ -29,10 +29,9 @@ object FortressFuryApp extends JFXApp3:
 
     val mainStage = new JFXApp3.PrimaryStage:
       title = "Fortress Fury"
-      width = 1650
-      height = 750
-      minWidth = 400
-      minHeight = 300
+      width = 1300
+      height = 800
+      resizable = false
       icons += Image("image/icon.jpg")
 
 
@@ -60,7 +59,7 @@ object FortressFuryApp extends JFXApp3:
           stage.setScene(LeaderboardScene(mainStage, selectedScene))
     )
 
-    mainStage.scene = LobbyScene(mainStage, selectedScene) // GameScene(mainStage, selectedScene, new Game(logic.Map1), true) //
+    mainStage.scene = GameScene(mainStage, selectedScene, new Game(logic.Map1), true) //LobbyScene(mainStage, selectedScene) //
     stage = mainStage
 
   end start
