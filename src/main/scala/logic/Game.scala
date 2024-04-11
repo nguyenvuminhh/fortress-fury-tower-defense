@@ -162,6 +162,7 @@ class Game (val map: Map):
   def getRageEndTime = rageEndTime
   def rage() =
     if gold >= abilityPrice then
+      println("rg")
       gold -= abilityPrice
       gunTowers.foreach(gun => gun.rage())
       rageEndTime = survivingTimeInOneFifthSec + 15*5
@@ -173,12 +174,14 @@ class Game (val map: Map):
   def getFreezeEndTime = freezeEndTime
   def freeze() =
     if gold >= abilityPrice then
+      println("fr")
       gold -= abilityPrice
       freezeEndTime = survivingTimeInOneFifthSec + 15*5
   def defrost() = freezeEndTime = 0
   //POISON
   def poison() =
     if gold >= abilityPrice then
+      println("ps")
       gold -= abilityPrice
       enemies.foreach(enemy =>
         enemy.minusHP(100)

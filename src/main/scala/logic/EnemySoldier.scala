@@ -41,7 +41,7 @@ abstract class EnemySoldier(game: Game, baseDamage: Int):
   private var heading = East
 
   /** ADVANCE METHODS */
-  val adjustConst = 50-0.3882
+  val adjustConst = 45-0.25
   var step = 0
   def advance() =
     turnDirection match
@@ -68,16 +68,16 @@ abstract class EnemySoldier(game: Game, baseDamage: Int):
   
   /** UI */
   def picturePath: String
-  val widthProperty = DoubleProperty(50*HPpercentage)
+  val widthProperty = DoubleProperty(45*HPpercentage)
   val enemyImage = new ImageView:
-    fitHeight = 50
-    fitWidth = 50
+    fitHeight = 45
+    fitWidth = 45
     rotate = 90
     layoutX = (getX*adjustConst)
     layoutY = (getY*adjustConst)
   val HPimage = new StackPane:
     val maxHPbar = new Rectangle:
-      width = 50
+      width = 45
       height = 5
       fill = Color.Black
     val HPbar = new Rectangle:

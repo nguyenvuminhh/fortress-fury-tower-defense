@@ -50,13 +50,13 @@ class GameScene (
   val bgColor = "#ffffff"
 
   /** UI VARIABLES */
-  val squareside = 50
-  val colNum = 32
-  val rowNum = 11
+  val squareside = 45
+  val colNum = 33
+  val rowNum = 10
   private var selectedGunIndex = -1
   private var gunNameCollection: Vector[(String, Int)] = Vector(("Sharpshooter", 120), ("Cannon", 150), ("Turret", 200), ("GrenadeLauncher", 250), ("Sniper", 300), ("RocketLauncher", 500))
   private var selectedGridPos = GridPos(-1, -1)
-  val widthPropertyOfHQHP = DoubleProperty(50*game.headquarter.HPpercentage)
+  val widthPropertyOfHQHP = DoubleProperty(squareside*game.headquarter.HPpercentage)
 
   /** GAME VARIABLES */
   def wave = game.getWave
@@ -96,7 +96,7 @@ class GameScene (
 
         val HPimage = new StackPane:
           val maxHPbar = new Rectangle:
-            width = 50
+            width = squareside
             height = 5
             fill = Color.Black
             alignmentInParent = Pos.TopLeft
@@ -124,12 +124,12 @@ class GameScene (
             selectedGunIndex = -1
           else if !game.map.elementAt(GridPos(col, row)).isEmpty && game.map.elementAt(GridPos(col, row)).isPlacable then
             selectedGridPos = GridPos(col, row)
-            bottomCenter.children = game.map.elementAt(selectedGridPos).tower.get.description
+            infoBox.children = game.map.elementAt(selectedGridPos).tower.get.description
       add(square, col, row)
 
   val paneForEnemy = new Pane:
-    maxWidth <== gridMap.maxWidth
-    maxHeight <== gridMap.maxHeight
+    prefWidth = mainStage.width.value
+    prefHeight = mainStage.height.value * 0.65
   paneForEnemy.setMouseTransparent(true)
 
   /** LEVEL WAVE TEXT */
@@ -275,7 +275,7 @@ class GameScene (
         paneForEnemy.children += enemy.imageView})
       game.toBeDeployed = game.toBeDeployed.drop(1)
     //SHOOT
-    val temp = game.gunTowerCollection
+    val temp = game.gunTowerCollection.clone()
     temp.foreach(_.shoot())
     //END ABILITY
     if game.getSurvivingTimeInOneFifthSec == game.getRageEndTime.toLong then game.derage()
@@ -323,12 +323,11 @@ class GameScene (
       children = Seq(bg, contentOfButton)
       alignment = Pos.Center
       onMouseClicked = () =>
-        selectedGunIndex = i
-          onMouseClicked = () =>
-            i match
-              case 0 => game.poison()
-              case 1 => game.freeze()
-              case 2 => game.rage()
+        println("clicked")
+        i match
+          case 0 => game.poison()
+          case 1 => game.freeze()
+          case 2 => game.rage()
       }
 
   /** GUN BUTTONS */
@@ -354,7 +353,6 @@ class GameScene (
       alignment = Pos.BaselineCenter
       children = Array(gunPicture, priceLabel)
       padding = Insets(btWidth/15, 0, 0, 0)
-  
 
     new StackPane:
       maxHeight = btHeight
@@ -362,7 +360,7 @@ class GameScene (
       alignment = Pos.Center
       onMouseClicked = () =>
         selectedGunIndex = i
-        bottomCenter.children = game.infoGunTowers(i).description
+        infoBox.children = game.infoGunTowers(i).description
 }
 
   /** GAME OVER */
@@ -421,8 +419,8 @@ class GameScene (
     arcWidth = 30
     fill = buttonColor
   val statBlurBg = new Rectangle:
-    height <== paneForEnemy.height
-    width <== paneForEnemy.width
+    height <== mainStage.height
+    width <== mainStage.width
     fill = Color.web("#000000", 0.7)
   val stat = new StackPane:
     children = Seq(statBlurBg, statBg, statContent)
@@ -430,46 +428,65 @@ class GameScene (
   /** Center */
   val center = new StackPane:
     children = Seq(gridMap, paneForEnemy)
-    translateX = -51
+    translateX = -46
 
   /** Top */
-  val topleft = new VBox:
+  val topLeft = new VBox:
     spacing = 10
     padding = Insets(0, 20, 10, 20)
     children = Seq(levelWaveLabel, goldText, HPText)
-  val topcenter = new VBox:
+  val topCenter = new VBox:
     alignment = Pos.Center
     spacing = 10
     children = Seq(scoreText, timerText)
-  val topright = new HBox:
+  val topRight = new HBox:
     children = Seq(quit, speedup, pause)
-    padding = Insets(0, 70, 0, 0)
+    padding = Insets(0, 10, 0, 0)
     spacing = 10
-  val top = new BorderPane(topcenter, null, topright, null, topleft)
-  top.prefWidthProperty().bind(mainStage.width)
+    alignment = Pos.CenterRight
+
   /** Bottom */
-  val bottomRight = new HBox:
-    children = gunButtonsArray
-    spacing = 15
-    padding = Insets(0, 70, 10, 0)
+  private var infoBox = new StackPane:
     alignment = Pos.Center
-  val bottomLeft = new HBox:
-    children = abilityButtonArray
-    spacing = 15
-    padding = Insets(0, 0 , 10, 15)
-    alignment = Pos.Center
-  private var bottomCenter = new StackPane:
-    alignment = Pos.Center
-    padding = Insets(0, 0 , 10, 0)
     maxHeight = 130
     maxWidth = 300
-  val bottom = new BorderPane(bottomCenter, null, bottomRight, null, bottomLeft)
+
+  val bottom = new HBox:
+    children = gunButtonsArray ++ abilityButtonArray ++ Array(infoBox)
+    spacing = 15
+    padding = Insets(0, 70, 10, 10)
+    alignment = Pos.CenterLeft
 
   /** Root */
-  val maincontainer = BorderPane(center, top, null, bottom, null)
+  val maincontainer = GridPane()
   root = maincontainer
-  root.value.style = s"-fx-background-color: $bgColor;"
 
+
+
+  val column = new ColumnConstraints:
+    percentWidth = 25
+
+  val row0 = new RowConstraints:
+    percentHeight = 15
+  val row1 = new RowConstraints:
+    percentHeight = 65
+  val row2 = new RowConstraints:
+      percentHeight = 20
+
+  maincontainer.columnConstraints = Array(column, column, column, column)
+  maincontainer.rowConstraints = Array(row0, row1, row2)
+
+  maincontainer.add(topLeft, 0, 0, 1, 1)
+  maincontainer.add(topCenter, 1, 0, 2, 1)
+  maincontainer.add(topRight, 3, 0, 1, 1)
+  maincontainer.add(bottom, 0, 2, 4, 1)
+  maincontainer.add(center, 0, 1, 4, 1)
+
+
+
+  print(infoBox.children)
+
+  root.value.style = s"-fx-background-color: $bgColor;"
   /** Helper methods */
   def squareInGrid(pos: GridPos, gridd: GridPane) =
     gridd.children.find(node => getRowIndex(node) == pos.y && getColumnIndex(node) == pos.x).get.asInstanceOf[javafx.scene.layout.StackPane]
@@ -516,7 +533,7 @@ class GameScene (
       survivingTime.text = timerText.text.value
       enemiesKilled.text = "Killed " + game.getEnemyKilled.toString + " enemies"
       wavesSurvived.text = "Survived " + ((wave-1).toString) + " waves"
-      Platform.runLater(() -> center.children.append(stat)))
+      Platform.runLater(() -> maincontainer.add(stat, 0, 0, 4, 3)))
 
   /** LOAD GAME */
   val data = Source.fromFile("src/main/resources/savedGame.txt")
@@ -536,6 +553,8 @@ class GameScene (
   val file = new File("src/main/resources/savedGame.txt")
   val writer = new PrintWriter(file)
   writer.close()
+
+
 
   println(paneForEnemy.widthProperty().value)
 
