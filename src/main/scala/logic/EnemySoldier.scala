@@ -1,6 +1,7 @@
 package logic
 
 import logic.grid.CompassDir.*
+import logic.grid.GridPos
 import scalafx.beans.property.DoubleProperty
 import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.layout.{BorderPane, StackPane}
@@ -8,6 +9,7 @@ import scalafx.scene.paint.Color
 import scalafx.scene.paint.Color.*
 import scalafx.scene.shape.Rectangle
 import scalafx.scene.text.FontWeight.Black
+
 
 import java.io
 import scala.math.BigDecimal.RoundingMode
@@ -39,20 +41,23 @@ abstract class EnemySoldier(game: Game, baseDamage: Int):
   def getY = y
   private var pace = 0.2
   private var heading = East
+  def getHeading = heading
 
   /** ADVANCE METHODS */
   val adjustConst = 45-0.25
   var step = 0
   def advance() =
-    turnDirection match
-      case 1 => turnRight()
-      case 0 => turnLeft()
-      case -1 => ()
-    x = BigDecimal(x +heading.xStep*pace).setScale(1, BigDecimal.RoundingMode.HALF_UP).toDouble
-    y = BigDecimal(y +heading.yStep*pace).setScale(1, BigDecimal.RoundingMode.HALF_UP).toDouble
-    imageView.layoutY = adjustConst*y
-    imageView.layoutX = adjustConst*x
-    step += 1
+    if x == this.game.map.crashSquare.x && y == this.game.map.crashSquare.y then crash()
+    else
+      turnDirection match
+        case 1 => turnRight()
+        case 0 => turnLeft()
+        case -1 => ()
+      x = BigDecimal(x +heading.xStep*pace).setScale(1, BigDecimal.RoundingMode.HALF_UP).toDouble
+      y = BigDecimal(y +heading.yStep*pace).setScale(1, BigDecimal.RoundingMode.HALF_UP).toDouble
+      imageView.layoutY = adjustConst*y
+      imageView.layoutX = adjustConst*x
+      step += 1
   def turnRight() =
     heading = heading.clockwise
     enemyImage.rotate.value += 90
@@ -65,10 +70,12 @@ abstract class EnemySoldier(game: Game, baseDamage: Int):
   def crash() =
     game.headquarter.minusHP(damage)
     HP = 0
+    game.widthPropertyOfHQHP.value = 45*game.headquarter.HPpercentage
   
   /** UI */
   def picturePath: String
-  val widthProperty = DoubleProperty(45*HPpercentage)
+  val HPbarWidth = 45
+  val widthProperty = DoubleProperty(HPbarWidth*HPpercentage)
   val enemyImage = new ImageView:
     fitHeight = 45
     fitWidth = 45
@@ -77,7 +84,7 @@ abstract class EnemySoldier(game: Game, baseDamage: Int):
     layoutY = (getY*adjustConst)
   val HPimage = new StackPane:
     val maxHPbar = new Rectangle:
-      width = 45
+      width = HPbarWidth
       height = 5
       fill = Color.Black
     val HPbar = new Rectangle:
@@ -93,7 +100,7 @@ abstract class EnemySoldier(game: Game, baseDamage: Int):
     val info = stringInfo.split("\t").drop(1)
     for _ <- 0 until info(0).toInt do this.advance()
     HP = (maxHP * info(1).toDouble).toInt
-    widthProperty.value = 50*HPpercentage
+    widthProperty.value = HPbarWidth*HPpercentage
 
 case class Infantry(game: Game) extends EnemySoldier(game, 200):
   override val picturePath = "image/infantry.png"

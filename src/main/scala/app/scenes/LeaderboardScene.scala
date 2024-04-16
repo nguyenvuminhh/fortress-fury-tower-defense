@@ -45,13 +45,13 @@ class LeaderboardScene(
     data.close()
   }
   def tableLength = math.min(dataRow.length+1, 10)
-  val dataRowSorted = Seq(Seq("Date", "Map",  "Score", "Surviving Time", "Waves Survived", "Enemies Killed")) ++ dataRow.sortBy(row => row(1).toLong).reverse
+  val dataRowSorted = Seq(Seq("Date", "Map",  "Score", "Surviving Time", "Waves Survived", "Enemies Killed")) ++ dataRow.sortBy(row => row(2).toLong).reverse
 
   val table = new VBox:
     children = Seq.tabulate(tableLength)(i =>
       val row = new HBox:
         alignment = Center
-        children = Seq.tabulate(6)(j =>
+        children = Seq.tabulate(6){j =>
           new StackPane:
             val bg = new Rectangle:
               width = 150
@@ -59,10 +59,10 @@ class LeaderboardScene(
               fill = if i%2 == 0 then Color.web("#BF9000") else Color.web("#F4C55E")
             val text = new Text(dataRowSorted(i)(j))
             text.style = if i == 0 then s"-fx-font-family: Gotham; -fx-font-weight: bold; -fx-font-size: 15;" else s"-fx-font-family: Gotham; -fx-font-size: 15;"
-            children = Seq(bg, text);)
+            children = Seq(bg, text)
+        }
       row)
     alignment = Center
-    translateY = 0
 
   val banner = new ImageView:
     image = Image("image/leaderboardBanner.png")

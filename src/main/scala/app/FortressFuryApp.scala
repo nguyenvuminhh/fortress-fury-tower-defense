@@ -1,7 +1,7 @@
 package app
 
 
-import app.scenes.{GameScene, LeaderboardScene, LobbyScene, MapSelectionScene}
+import app.scenes.{GameScene, LeaderboardScene, LobbyScene, MapSelectionScene, TutorialScene}
 import logic.Game
 import scalafx.application.JFXApp3
 import scalafx.beans.property.ObjectProperty
@@ -34,7 +34,6 @@ object FortressFuryApp extends JFXApp3:
       resizable = true
       icons += Image("image/icon.jpg")
 
-
     selectedScene.onChange((_, _, newValue) =>
       newValue match
         case Scenes.NewGameScene1 =>
@@ -57,9 +56,12 @@ object FortressFuryApp extends JFXApp3:
 
         case Scenes.LeaderboardScene =>
           stage.setScene(LeaderboardScene(mainStage, selectedScene))
+
+        case Scenes.TutorialScene =>
+          stage.setScene(TutorialScene(mainStage, selectedScene))
     )
 
-    mainStage.scene = LobbyScene(mainStage, selectedScene) //GameScene(mainStage, selectedScene, new Game(logic.Map1), true) //
+    mainStage.scene = LobbyScene(mainStage, selectedScene)
     stage = mainStage
 
   end start

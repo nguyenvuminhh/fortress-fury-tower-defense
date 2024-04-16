@@ -1,7 +1,9 @@
 package logic
 
 import logic.grid.GridPos
-import scalafx.beans.property.BooleanProperty
+import scalafx.beans.property.{BooleanProperty, DoubleProperty}
+import scalafx.scene.control.Alert
+import scalafx.scene.control.Alert.AlertType
 
 import java.io.{BufferedWriter, File, FileOutputStream, FileWriter, ObjectOutputStream, PrintWriter}
 import java.nio.file.{Files, Paths}
@@ -30,7 +32,7 @@ class Game (val map: Map):
 
   /** WAVE */
   private var wave = 0 //NEED SAVING
-  def nextWave = wave += 1//TODO: Ask if this is necessary
+  def nextWave = wave += 1
   def getWave = wave
 
   /** PAUSE */
@@ -57,10 +59,11 @@ class Game (val map: Map):
 
   /** TOWERS */
   var headquarter = Headquarter(map.HQSquare.x, map.HQSquare.y) //NEED SAVING
+  val widthPropertyOfHQHP = DoubleProperty(45*headquarter.HPpercentage)
   map.elementAt(map.HQSquare).addTower(headquarter)
   val gunTowerCollection = Buffer[GunTower]() //NEED SAVING
   def gunTowers = gunTowerCollection
-  val infoGunTowers = Vector[GunTower](Sharpshooter(-1, -1, this), Cannon(-1, -1, this), Turret(-1, -1, this), GrenadeLauncher(-1, -1, this), Sniper(-1, -1, this), RocketLauncher(-1, -1, this))
+  lazy val infoGunTowers = Vector[GunTower](Sharpshooter(-1, -1, this), Cannon(-1, -1, this), Turret(-1, -1, this), GrenadeLauncher(-1, -1, this), Sniper(-1, -1, this), RocketLauncher(-1, -1, this))
 
   /** ENEMIES */
   private var enemyCollection = Buffer[EnemySoldier]() //NEED SAVING
@@ -128,8 +131,8 @@ class Game (val map: Map):
 
 //tODO: TEST WITH EMPTY ....
   /** GUN TOWER METHODS */
-  def place(gunTowerType: (String, Int), x: Int, y: Int) =
-    if gunTowerType._2 <= gold && map.elementAt(GridPos(x, y)).isEmpty then
+  def place(gunTowerType: (String, Int), x: Int, y: Int): Boolean =
+    if gunTowerType._2 <= gold  && map.elementAt(GridPos(x, y)).isEmpty then
       val gunTower =
         gunTowerType._1 match
           case "Sharpshooter"     => Sharpshooter(x, y, this)
@@ -142,18 +145,29 @@ class Game (val map: Map):
       gunTowerCollection += gunTower
       gold -= gunTower.price
       true
-    else false
+    else if gunTowerType._2 > gold then
+      Alert(AlertType.Warning, "Not enough money").showAndWait()
+      false
+    else
+      Alert(AlertType.Warning, "You cannot place a gun on the road or an occupied square").showAndWait()
+      false
 
   def upgrade(gridPos: GridPos) =
     val square = map.elementAt(gridPos)
     if !square.isEmpty && square.tower.get.upgradePrice <= gold then
       square.tower.get.upgrade()
       gold -= square.tower.get.upgradePrice
+    else if square.tower.get.upgradePrice > gold then Alert(AlertType.Warning, "Not enough money").showAndWait()
+    else Alert(AlertType.Warning, "You did not select a tower").showAndWait()
 
   def remove(gridPos: GridPos) =
-    gold += (headquarter.getGoldBackRate* map.elementAt(gridPos).tower.get.asInstanceOf[GunTower].price).toInt
-    gunTowerCollection -= map.elementAt(gridPos).tower.get.asInstanceOf[GunTower]
-    map.elementAt(gridPos).clear()
+    map.elementAt(gridPos).tower.get match
+      case tower: GunTower =>
+        gold += (headquarter.getGoldBackRate * tower.price).toInt
+        gunTowerCollection -= tower
+        map.elementAt(gridPos).clear()
+      case _ => ()
+
 
   /** ABILITY METHOD */
   val abilityPrice = 750
@@ -162,10 +176,11 @@ class Game (val map: Map):
   def getRageEndTime = rageEndTime
   def rage() =
     if gold >= abilityPrice then
-      println("rg")
       gold -= abilityPrice
       gunTowers.foreach(gun => gun.rage())
       rageEndTime = survivingTimeInOneFifthSec + 15*5
+    else
+      Alert(AlertType.Warning, "Not enough money").showAndWait()
   def derage() =
     gunTowers.foreach(gun => gun.derage())
     rageEndTime = 0
@@ -174,18 +189,20 @@ class Game (val map: Map):
   def getFreezeEndTime = freezeEndTime
   def freeze() =
     if gold >= abilityPrice then
-      println("fr")
       gold -= abilityPrice
       freezeEndTime = survivingTimeInOneFifthSec + 15*5
+    else
+      Alert(AlertType.Warning, "Not enough money").showAndWait()
   def defrost() = freezeEndTime = 0
   //POISON
   def poison() =
     if gold >= abilityPrice then
-      println("ps")
       gold -= abilityPrice
       enemies.foreach(enemy =>
         enemy.minusHP(100)
         enemy.widthProperty.value = 50*enemy.HPpercentage)
+    else
+      Alert(AlertType.Warning, "Not enough money").showAndWait()
 
   /** SAVE GAME */
   val mapType = map.toString

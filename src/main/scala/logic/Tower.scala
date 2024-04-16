@@ -26,7 +26,7 @@ trait Tower:
 end Tower
 
 
-case class Headquarter(x: Double, y: Double) extends Tower:
+case class Headquarter(x: Int, y: Int) extends Tower:
 
   /** LEVEL */
   private var level = 1 //NEED SAVING
@@ -38,6 +38,7 @@ case class Headquarter(x: Double, y: Double) extends Tower:
   def getMaxHP = maxHP
   def HPpercentage = HP*1.0/maxHP //NEED SAVING
   def minusHP(amount: Int) = HP -= amount
+
 
   /** GOLD */
   private var goldPer10s = 10 //NEED SAVING
@@ -91,8 +92,8 @@ case class Headquarter(x: Double, y: Double) extends Tower:
     val bg = new Rectangle:
       width = 300
       height = 130
-      arcWidth = 10
-      arcHeight = 10
+      arcWidth = 20
+      arcHeight = 20
       fill = Color.web("#BF9000")
     Seq(bg, info)
 
@@ -122,11 +123,10 @@ class GunTower(val name: String, x: Int, y: Int, var damage: Int, var fireRate: 
 
   /** ANGLE */
   val prevAngle = DoubleProperty(0.0)
-  def updateRotationAngle =
-    if target.nonEmpty then
-      prevAngle.value = toDegrees(atan2((y*1.0 - target.get.getY),(x*1.0 - target.get.getX)))
+  def updateRotationAngle() =
+    if target.nonEmpty then prevAngle.value = toDegrees(atan2((y*1.0 - target.get.getY),(x*1.0 - target.get.getX)))
 
-  val image = ObjectProperty(Image("image/ci" + name + ".png"))
+  lazy val image = ObjectProperty(Image("image/ci" + name + ".png"))
   /** LOAD */
   def load(stringInfo: String) =
     val info = stringInfo.split("\t").takeRight(1).head.toInt
@@ -140,7 +140,7 @@ class GunTower(val name: String, x: Int, y: Int, var damage: Int, var fireRate: 
       target.get.minusHP(getDamage)
       onCoolDown = true
       target.get.widthProperty.value = (50*(target.get.HPpercentage))
-      updateRotationAngle
+      updateRotationAngle()
       image.value = Image("image/ci" + name + "Shoot.png")
       Future {
         Thread.sleep(((getFireRate*50)/game.pace).toLong)

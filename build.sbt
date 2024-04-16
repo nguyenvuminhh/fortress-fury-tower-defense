@@ -7,3 +7,4 @@ lazy val root = (project in file("."))
     name := "Fortress Fury"
   )
 libraryDependencies += "org.scalafx" % "scalafx_3" % "20.0.0-R31"
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.18" % "test"

@@ -28,6 +28,7 @@ import scalafx.scene.paint.Color
 import scalafx.scene.paint.Color.{Black, Blue, Green, Red, Transparent, White}
 import scalafx.scene.shape.Rectangle
 import scalafx.scene.text.{Font, FontWeight, Text, TextFlow}
+import scalafx.beans.binding.BindingIncludes._
 
 /** OTHER IMPORTS */
 import java.util.{Timer, TimerTask}
@@ -56,7 +57,6 @@ class GameScene (
   private var selectedGunIndex = -1
   private var gunNameCollection: Vector[(String, Int)] = Vector(("Sharpshooter", 120), ("Cannon", 150), ("Turret", 200), ("GrenadeLauncher", 250), ("Sniper", 300), ("RocketLauncher", 500))
   private var selectedGridPos = GridPos(-1, -1)
-  val widthPropertyOfHQHP = DoubleProperty(squareside*game.headquarter.HPpercentage)
 
   /** GAME VARIABLES */
   def wave = game.getWave
@@ -101,7 +101,7 @@ class GameScene (
             fill = Color.Black
             alignmentInParent = Pos.TopLeft
           val HPbar = new Rectangle:
-            width <== widthPropertyOfHQHP
+            width <== game.widthPropertyOfHQHP
             height = 5
             fill = Color.Green
             alignmentInParent = Pos.TopLeft
@@ -125,6 +125,7 @@ class GameScene (
           else if !game.map.elementAt(GridPos(col, row)).isEmpty && game.map.elementAt(GridPos(col, row)).isPlacable then
             selectedGridPos = GridPos(col, row)
             infoBox.children = game.map.elementAt(selectedGridPos).tower.get.description
+
       add(square, col, row)
 
   val paneForEnemy = new Pane:
@@ -133,10 +134,10 @@ class GameScene (
   paneForEnemy.setMouseTransparent(true)
 
   /** LEVEL WAVE TEXT */
-  val levelWaveValueProperty = StringProperty("Wave" + (wave -1))
+  val waveProperty = StringProperty("Wave" + (wave -1))
   val levelWaveLabel = new Text:
     style = s"-fx-font-family: $fontName; -fx-font-weight: bold; -fx-font-size: 20px; -fx-fill: $topTextColor;"
-  levelWaveLabel.text <== levelWaveValueProperty
+  levelWaveLabel.text <== waveProperty
   /** GOLD TEXT */
   val goldValueProperty = StringProperty(gold.toString)
   def updateGold() = goldValueProperty.value = gold.toString
@@ -189,9 +190,16 @@ class GameScene (
     children = Seq(pauseBg, pauseIcon)
     alignment = Pos.Center
     onMouseClicked = () =>
-      if !game.getIsPaused then game.pause() else game.resume()
+      if !game.getIsPaused then
+        game.pause()
+        pauseIcon.image = Image("image/resumeButton.png")
+      else
+        game.resume()
+        pauseIcon.image = Image("image/pauseButton.png")
 
   /** SPEEDUP BUTTON */
+  val speedupIcons = Vector("05", "075", "1", "15", "2")
+  var speedupIconsIndex = 2
   val speedup = new StackPane:
     val speedupBg = new Rectangle:
       arcHeight = 30
@@ -201,12 +209,15 @@ class GameScene (
       fill = buttonColor
     val speedupIcon = new ImageView:
       fitHeight = iconSize
-      fitWidth = iconSize
-      image = Image("image/speedupButton.png")
+      image = Image("image/speed" + speedupIcons(speedupIconsIndex) + ".png")
       preserveRatio = true
     children = Seq(speedupBg, speedupIcon)
     alignment = Pos.Center
-    onMouseClicked = () => game.speedup()
+    onMouseClicked = () =>
+      game.speedup()
+      speedupIconsIndex = (speedupIconsIndex+1)%5
+      speedupIcon.image = Image("image/speed" + speedupIcons(speedupIconsIndex) + ".png")
+
 
     /** QUIT */
   val quit = new StackPane:
@@ -247,11 +258,7 @@ class GameScene (
     HPProperty.value = HP
     //ADVANCE THE ENEMY
     if game.getFreezeEndTime == 0 then
-      game.enemies.foreach(enemy =>
-        if enemy.getX == game.map.crashSquare.x && enemy.getY == game.map.crashSquare.y then
-          enemy.crash()
-          widthPropertyOfHQHP.value = 50*game.headquarter.HPpercentage
-        else enemy.advance())
+      game.enemies.foreach(_.advance())
     //FILTER DEAD ENEMY
     game.enemies.foreach(enemy =>
       if enemy.isDead then
@@ -265,7 +272,7 @@ class GameScene (
       deployWave(wave)
       game.nextDeployTime = game.getSurvivingTimeInOneFifthSec + 120*5
       game.nextWave
-      levelWaveValueProperty.value = "Wave " + (wave - 1)
+      waveProperty.value = "Wave " + (wave - 1)
       game.cannotDeployUntil = game.getSurvivingTimeInOneFifthSec + 10*5
     if game.toBeDeployed.nonEmpty && game.getSurvivingTimeInOneFifthSec%5 == 0 then
       val enemy = game.toBeDeployed.head
@@ -323,7 +330,6 @@ class GameScene (
       children = Seq(bg, contentOfButton)
       alignment = Pos.Center
       onMouseClicked = () =>
-        println("clicked")
         i match
           case 0 => game.poison()
           case 1 => game.freeze()
@@ -442,7 +448,7 @@ class GameScene (
   val topRight = new HBox:
     children = Seq(quit, speedup, pause)
     padding = Insets(0, 10, 0, 0)
-    spacing = 10
+    spacing = 20
     alignment = Pos.CenterRight
 
   /** Bottom */
@@ -457,15 +463,12 @@ class GameScene (
     padding = Insets(0, 70, 10, 10)
     alignment = Pos.CenterLeft
 
-  /** Root */
+  /** ROOT */
   val maincontainer = GridPane()
   root = maincontainer
 
-
-
   val column = new ColumnConstraints:
     percentWidth = 25
-
   val row0 = new RowConstraints:
     percentHeight = 15
   val row1 = new RowConstraints:
@@ -482,12 +485,9 @@ class GameScene (
   maincontainer.add(bottom, 0, 2, 4, 1)
   maincontainer.add(center, 0, 1, 4, 1)
 
-
-
-  print(infoBox.children)
-
   root.value.style = s"-fx-background-color: $bgColor;"
-  /** Helper methods */
+  
+  /** HELPER METHODS */
   def squareInGrid(pos: GridPos, gridd: GridPane) =
     gridd.children.find(node => getRowIndex(node) == pos.y && getColumnIndex(node) == pos.x).get.asInstanceOf[javafx.scene.layout.StackPane]
   def unit(amount: Int, unitType: Int): Vector[EnemySoldier] =
@@ -505,28 +505,9 @@ class GameScene (
     val troops = unit(a, 4) ++ unit(b, 3) ++ unit(c, 2) ++ unit(d, 1)
     if wave != 0 then game.toBeDeployed = troops else ()
 
-  onKeyTyped = (ke: KeyEvent) =>
-    ke.character.toLowerCase match
-      /** REMOVE GUNS */
-      case "r" =>
-        if selectedGridPos != GridPos(-1, -1) then
-          squareInGrid(selectedGridPos, gridMap).children(1).asInstanceOf[javafx.scene.image.ImageView].image.unbind()
-          squareInGrid(selectedGridPos, gridMap).children(1).asInstanceOf[javafx.scene.image.ImageView].image = clearPlaceHolder
-          game.remove(selectedGridPos)
-          selectedGridPos = GridPos(-1, -1)
-          updateGold()
-        else ()
-      /** CLEAR GUN SELECTION */
-      case "y" =>
-        selectedGridPos = GridPos(-1, -1)
-        selectedGunIndex = -1
-      /** UPGRADE GUN */
-      case "u" =>
-        if selectedGridPos != GridPos(-1, -1) then game.upgrade(selectedGridPos)
-      case _ => ()
-
+ 
   /** DETECTING GAMEOVER */
-  widthPropertyOfHQHP.onChange((_, _, newValue) =>
+  game.widthPropertyOfHQHP.onChange((_, _, newValue) =>
     if newValue.intValue() <= 0 then
       game.saveRecord()
       scoreStat.text = score.toString
@@ -537,8 +518,9 @@ class GameScene (
 
   /** LOAD GAME */
   val data = Source.fromFile("src/main/resources/savedGame.txt")
-  if data.getLines().nonEmpty && needLoad then //TODO: fix
+  if data.getLines().nonEmpty && needLoad then 
     game.load()
+    waveProperty.value = "Wave " + (wave - 1)
     game.enemies.foreach(enemy =>
       enemy.enemyImage.image = Image(enemy.picturePath)
       paneForEnemy.children += enemy.imageView)
@@ -546,7 +528,7 @@ class GameScene (
       val gridPos = GridPos(gun.getX, gun.getY)
       squareInGrid(gridPos, gridMap).children(1).asInstanceOf[javafx.scene.image.ImageView].image = Image("image/ci" + gun.name + ".png")
       squareInGrid(gridPos, gridMap).children(1).asInstanceOf[javafx.scene.image.ImageView].rotate <== gun.prevAngle)
-    widthPropertyOfHQHP.value = 50*game.headquarter.HPpercentage
+    game.widthPropertyOfHQHP.value = 45*game.headquarter.HPpercentage
   data.close()
 
   /** DELETE THE SAVED GAME FILE */
@@ -554,7 +536,27 @@ class GameScene (
   val writer = new PrintWriter(file)
   writer.close()
 
+ /** SETTING KEYS */
+  onKeyTyped = (ke: KeyEvent) =>
+    ke.character.toLowerCase match
+      /** REMOVE GUNS */
+      case "r" =>
+        if selectedGridPos == game.map.HQSquare then Alert(AlertType.Warning, "You cannot remove the headquarter").showAndWait()
+        else if selectedGridPos != GridPos(-1, -1) then
+          squareInGrid(selectedGridPos, gridMap).children(1).asInstanceOf[javafx.scene.image.ImageView].image.unbind()
+          squareInGrid(selectedGridPos, gridMap).children(1).asInstanceOf[javafx.scene.image.ImageView].image = clearPlaceHolder
+          game.remove(selectedGridPos)
+          selectedGridPos = GridPos(-1, -1)
+          updateGold()
+        else Alert(AlertType.Warning, "You did not select a tower").showAndWait()
+      /** CLEAR GUN SELECTION */
+      case "y" =>
+        selectedGridPos = GridPos(-1, -1)
+        selectedGunIndex = -1
+      /** UPGRADE GUN */
+      case "u" =>
+        if selectedGridPos != GridPos(-1, -1) then game.upgrade(selectedGridPos)
+        else Alert(AlertType.Warning, "You did not select a tower").showAndWait()
+      case _ => ()
 
-
-  println(paneForEnemy.widthProperty().value)
 

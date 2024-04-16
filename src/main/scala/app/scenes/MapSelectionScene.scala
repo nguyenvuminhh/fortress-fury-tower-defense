@@ -18,6 +18,7 @@ class MapSelectionScene (
     selectedScene: ObjectProperty[Scenes],
 ) extends Scene:
 
+  /** CENTER */
   val center = new HBox:
     val map1 = new ImageView:
       image = Image("image/map1.png")
@@ -32,9 +33,9 @@ class MapSelectionScene (
     children = Seq(map1, map2)
     prefWidth = 600
     spacing = 300
-    translateY = 60
     alignment = Center
 
+  /** BACK BUTTON */
   val backButton = new ImageView:
     fitWidth = 100
     fitHeight = 100
@@ -47,15 +48,12 @@ class MapSelectionScene (
     image = Image("image/mapChoosingBanner.png")
     fitWidth = 500
     preserveRatio = true
-    alignmentInParent = Center
+    translateY = 20
+    alignmentInParent = BottomCenter
 
-  val top = new BorderPane(banner, null, null, null, backButton)
-  top.padding = Insets(20, 20, 20, 20)
-   val maincontainer = GridPane()
+  /** ROOT */
+  val maincontainer = GridPane()
   root = maincontainer
-
-
-
   val column0 = new ColumnConstraints:
     percentWidth = 25
   val column1 = new ColumnConstraints:
