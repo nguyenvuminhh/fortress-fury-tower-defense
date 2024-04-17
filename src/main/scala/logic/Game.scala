@@ -1,19 +1,19 @@
 package logic
-
 import logic.grid.GridPos
+
+/** SCALAFX IMPORT */
 import scalafx.beans.property.{BooleanProperty, DoubleProperty}
 import scalafx.scene.control.Alert
 import scalafx.scene.control.Alert.AlertType
 
-import java.io.{BufferedWriter, File, FileOutputStream, FileWriter, ObjectOutputStream, PrintWriter}
-import java.nio.file.{Files, Paths}
+/** OTHER IMPORT */
+import java.io.*
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.{Locale, Timer, TimerTask}
+import java.util.Locale
 import scala.collection.mutable.Buffer
 import scala.io.Source
 import scala.math.{pow, sqrt}
-import scala.util.{Failure, Success, Try}
 
 class Game (val map: Map):
   /** SCORE */
@@ -25,7 +25,7 @@ class Game (val map: Map):
   def increaseEnemyKilled() = enemyKilled += 1
 
   /** GOLD */
-  private var gold = 10000 //NEED SAVING
+  private var gold = 1000 //NEED SAVING
   def getGold = gold
   def giveGold() = gold += headquarter.getGoldPer10s
   def addGold(amount: Int) = gold += amount
@@ -129,7 +129,6 @@ class Game (val map: Map):
       loadBasic(seqStringInfo(1))
     data.close()
 
-//tODO: TEST WITH EMPTY ....
   /** GUN TOWER METHODS */
   def place(gunTowerType: (String, Int), x: Int, y: Int): Boolean =
     if gunTowerType._2 <= gold  && map.elementAt(GridPos(x, y)).isEmpty then
@@ -216,8 +215,6 @@ class Game (val map: Map):
     try {
       writer.write(data)
     }
-    catch
-      case e: Exception => println(e.getMessage)
     finally {writer.close()}
 
   def saveGame() =
@@ -241,7 +238,6 @@ class Game (val map: Map):
     try {
       writer.write(data)
     }
-    catch
-      case e: Exception => println(e.getMessage)
     finally {writer.close()}
+
 end Game

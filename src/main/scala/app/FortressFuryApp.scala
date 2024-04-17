@@ -1,8 +1,8 @@
 package app
 
 
-import app.scenes.{GameScene, LeaderboardScene, LobbyScene, MapSelectionScene, TutorialScene}
-import logic.Game
+import app.scenes.*
+import logic.{Game, Map1, Map2}
 import scalafx.application.JFXApp3
 import scalafx.beans.property.ObjectProperty
 import scalafx.geometry.Insets
@@ -37,16 +37,16 @@ object FortressFuryApp extends JFXApp3:
     selectedScene.onChange((_, _, newValue) =>
       newValue match
         case Scenes.NewGameScene1 =>
-          stage.setScene(GameScene(mainStage, selectedScene, new Game(logic.Map1), false))
+          stage.setScene(GameScene(mainStage, selectedScene, new Game(new Map1), false))
 
         case Scenes.NewGameScene2 =>
-          stage.setScene(GameScene(mainStage, selectedScene, new Game(logic.Map2), false))
+          stage.setScene(GameScene(mainStage, selectedScene, new Game(new Map2), false))
 
         case Scenes.ContinueGameScene1 =>
-          stage.setScene(GameScene(mainStage, selectedScene, new Game(logic.Map1), true))
+          stage.setScene(GameScene(mainStage, selectedScene, new Game(new Map1), true))
 
         case Scenes.ContinueGameScene2 =>
-          stage.setScene(GameScene(mainStage, selectedScene, new Game(logic.Map2), true))
+          stage.setScene(GameScene(mainStage, selectedScene, new Game(new Map2), true))
 
         case Scenes.MapSelectionScene =>
           stage.setScene(MapSelectionScene(mainStage, selectedScene))

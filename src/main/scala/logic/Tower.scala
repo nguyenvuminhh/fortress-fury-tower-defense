@@ -1,22 +1,21 @@
 package logic
+
+/** SCALAFX IMPORT */
 import scalafx.beans.property.{DoubleProperty, ObjectProperty}
 import scalafx.geometry.Insets
 import scalafx.scene.Node
-import scalafx.scene.control.Label
 import scalafx.scene.image.Image
-import scalafx.scene.layout.{HBox, StackPane, VBox}
+import scalafx.scene.layout.{HBox, VBox}
 import scalafx.scene.paint.Color
-import scalafx.scene.paint.Color.Blue
 import scalafx.scene.shape.Rectangle
 import scalafx.scene.text.TextAlignment.Center
 import scalafx.scene.text.{Text, TextFlow}
 
-import java.io
-import scala.concurrent.*
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.*
+/** OTHER IMPORT */
+import scala.concurrent.Future
+import concurrent.ExecutionContext.Implicits.global
 import scala.math.BigDecimal.RoundingMode
-import scala.math.{atan2, min, pow, sqrt, toDegrees}
+import scala.math.*
 
 trait Tower:
   def upgrade(): Unit
@@ -76,7 +75,7 @@ case class Headquarter(x: Int, y: Int) extends Tower:
     )
     val info = new VBox:
       padding = Insets(10, 20, 0, 20)
-      val heading = new Label("Headquarter")
+      val heading = new Text("Headquarter")
       heading.style = s"-fx-font-size: 20px; -fx-font-weight: bold;"
       heading.textAlignment = Center
       val content = new HBox:
@@ -100,6 +99,7 @@ case class Headquarter(x: Int, y: Int) extends Tower:
   override def toString: String = s"HQ\t$x\t$y\t$level\t$getHP\n"
   
 class GunTower(val name: String, x: Int, y: Int, var damage: Int, var fireRate: Double, var range: Double, val price: Int, game: Game) extends Tower:
+
   /** STATISTIC */
   private var rageConst = 1.0
   def getDamage = (damage*rageConst).toInt
@@ -168,7 +168,7 @@ class GunTower(val name: String, x: Int, y: Int, var damage: Int, var fireRate: 
     )
     val info = new VBox:
       padding = Insets(10, 20, 0, 20)
-      val heading = new Label(if getY == -1 then name else s"$name ($getX, $getY)")
+      val heading = new Text(if getY == -1 then name else s"$name ($getX, $getY)")
       heading.style = s"-fx-font-size: 20px; -fx-font-weight: bold;"
       heading.textAlignment = Center
       val content = new HBox:
@@ -194,9 +194,9 @@ class GunTower(val name: String, x: Int, y: Int, var damage: Int, var fireRate: 
 
 end GunTower
 
-case class Sharpshooter(x: Int, y: Int, game: Game) extends GunTower("Sharpshooter", x, y, 30, 0.8, 7.0, 120, game: Game)
-case class Cannon(x: Int, y: Int, game: Game) extends GunTower("Cannon", x, y, 60, 0.6, 3, 150, game: Game)
-case class Turret(x: Int, y: Int, game: Game) extends GunTower("Turret", x, y, 60, 0.6, 5.0, 200, game: Game)
-case class Sniper(x: Int, y: Int, game: Game) extends GunTower("Sniper", x, y, 250, 3.0, 7.0, 300, game: Game)
-case class GrenadeLauncher(x: Int, y: Int, game: Game) extends GunTower("GrenadeLauncher", x, y, 180, 1.0, 3.0, 250, game: Game)
-case class RocketLauncher(x: Int, y: Int, game: Game) extends GunTower("RocketLauncher", x, y, 350, 1.4, 5.0, 500, game: Game)
+case class Sharpshooter(x: Int, y: Int, game: Game) extends GunTower("Sharpshooter", x, y, 45, 0.8, 7.0, 120, game: Game)
+case class Cannon(x: Int, y: Int, game: Game) extends GunTower("Cannon", x, y, 90, 0.6, 3, 150, game: Game)
+case class Turret(x: Int, y: Int, game: Game) extends GunTower("Turret", x, y, 90, 0.6, 5.0, 200, game: Game)
+case class Sniper(x: Int, y: Int, game: Game) extends GunTower("Sniper", x, y, 375, 3.0, 7.0, 300, game: Game)
+case class GrenadeLauncher(x: Int, y: Int, game: Game) extends GunTower("GrenadeLauncher", x, y, 270, 1.0, 3.0, 250, game: Game)
+case class RocketLauncher(x: Int, y: Int, game: Game) extends GunTower("RocketLauncher", x, y, 525, 1.4, 5.0, 500, game: Game)

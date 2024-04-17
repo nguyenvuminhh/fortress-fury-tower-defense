@@ -1,7 +1,8 @@
 package logic
-
 import logic.grid.CompassDir.*
 import logic.grid.GridPos
+
+/** SCALAFX IMPORT */
 import scalafx.beans.property.DoubleProperty
 import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.layout.{BorderPane, StackPane}
@@ -10,12 +11,9 @@ import scalafx.scene.paint.Color.*
 import scalafx.scene.shape.Rectangle
 import scalafx.scene.text.FontWeight.Black
 
-
-import java.io
+/** OTHER IMPORT */
 import scala.math.BigDecimal.RoundingMode
-import scala.math.{Pi, cos, pow, round, sin}
-
-
+import scala.math.*
 
 abstract class EnemySoldier(game: Game, baseDamage: Int):
 

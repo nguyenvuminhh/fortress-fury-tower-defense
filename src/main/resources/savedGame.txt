@@ -1,0 +1,10 @@
+3	4
+0	10	2	70	651	101	0	2
+HQ	25	3	1	2000
+RocketLauncher	12	6	1
+RocketLauncher	14	6	1
+Cavalry	15	1.0
+Cavalry	10	1.0
+Cavalry	5	1.0
+Cavalry	0	1.0
+c	i	i	i	i	i	i	i	i	i	i	

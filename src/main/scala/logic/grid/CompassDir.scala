@@ -48,22 +48,6 @@ enum CompassDir(val xStep: Int, val yStep: Int) derives CanEqual:
     * one. For instance, calling this method on `North` returns `West`. */
   def counterClockwise = CompassDir.previous(this)
 
-  /** Returns the compass direction that is the opposite of this one. For instance,
-    * calling this method on `North` returns `South`. */
-  def opposite = this.clockwise.clockwise
-
-  /** Determines whether the given compass direction is the opposite of this one.
-    * For example, `North` and `South` are opposites of each other.*/
-  def isOpposite(that: CompassDir) = this.xStep == -that.xStep && this.yStep == -that.yStep
-
-  /** Determines whether this compass direction is on the East–West axis. That is,
-    * returns `true` for `East`` and `West`, `false` for `North` and `South`. */
-  def isHorizontal = this.xStep != 0
-
-  /** Determines whether this compass direction is on the North–South axis. That is,
-    * returns `true` for `North` and `South`, `false` for `East` and West`. */
-  def isVertical = this.yStep != 0
-
 end CompassDir
 
 
@@ -77,17 +61,9 @@ object CompassDir:
   /** a collection of all the four directions, in clockwise order starting with `North` */
   val Clockwise = Vector[CompassDir](North, East, South, West)
 
-  /** The number of the compass directions represented by class `CompassDir`. Four, that is. */
-  val Count = Clockwise.size
-
   private val next = Clockwise.zip(Clockwise.tail ++ Clockwise.init).toMap
   private val previous = this.next.map( _.swap )
 
-  private type Key = scalafx.scene.input.KeyEvent
-  private val  Key = scalafx.scene.input.KeyCode
-  private val ArrowToDir = Map(Key.Up -> North, Key.Left -> West, Key.Down-> South, Key.Right-> East)
-  private val WASDToDir  = Map(Key.W  -> North, Key.A    -> West, Key.S   -> South, Key.D    -> East)
-  private val KeyToDir   = ArrowToDir ++ WASDToDir
 
 end CompassDir
 

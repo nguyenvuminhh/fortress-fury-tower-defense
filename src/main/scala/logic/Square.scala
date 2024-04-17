@@ -1,7 +1,5 @@
 package logic
 
-import java.io
-
 trait Square:
   def isEmpty: Boolean
   def isPlacable: Boolean

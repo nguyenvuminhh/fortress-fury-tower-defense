@@ -1,34 +1,32 @@
 package app.scenes
-
-/** PACKAGE IMPORT */
 import app.FortressFuryApp.stage
 import app.Scenes
 import logic.*
 import logic.grid.GridPos
-import scalafx.scene.control.Alert
-import scalafx.scene.control.Alert.AlertType
 
+/** I/O IMPORT */
 import java.io.{File, FileWriter, PrintWriter}
 import scala.io.Source
 
 /** SCALAFX IMPORT */
 import scalafx.Includes.*
 import scalafx.application.{JFXApp3, Platform}
+import scalafx.beans.binding.BindingIncludes.*
 import scalafx.beans.property.{DoubleProperty, ObjectProperty, StringProperty}
 import scalafx.delegate.SFXDelegate
 import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.Scene
 import scalafx.scene.SceneIncludes.jfxNode2sfx
-import scalafx.scene.control.Label
+import scalafx.scene.control.Alert
+import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.input.{KeyCode, KeyEvent}
 import scalafx.scene.layout.*
 import scalafx.scene.layout.GridPane.{getColumnIndex, getRowIndex}
 import scalafx.scene.paint.Color
-import scalafx.scene.paint.Color.{Black, Blue, Green, Red, Transparent, White}
+import scalafx.scene.paint.Color.*
 import scalafx.scene.shape.Rectangle
 import scalafx.scene.text.{Font, FontWeight, Text, TextFlow}
-import scalafx.beans.binding.BindingIncludes._
 
 /** OTHER IMPORTS */
 import java.util.{Timer, TimerTask}
@@ -317,7 +315,7 @@ class GameScene (
         padding = Insets(btWidth/15, 0, 0, 0)
       children += abilityPictureContent
 
-    val priceLabel = Label(game.abilityPrice.toString)
+    val priceLabel = Text(game.abilityPrice.toString)
     priceLabel.font = Font.font("Arial", FontWeight.Bold, null, 20)
 
     val contentOfButton = new VBox:
@@ -352,7 +350,7 @@ class GameScene (
         padding = Insets(btWidth/15, 0, 0, 0)
       children += gunPictureContent
 
-    val priceLabel = Label(s"${gunNameCollection(i)._2}")
+    val priceLabel = Text(s"${gunNameCollection(i)._2}")
     priceLabel.font = Font.font("Arial", FontWeight.Bold, null, 20)
 
     val contentOfButton = new VBox:
@@ -406,7 +404,7 @@ class GameScene (
       width = 200
       height = 50
       arcWidth = 30
-      arcHeight = 30//TODO: QUIT
+      arcHeight = 30
       fill = Color.web("#F4C55E") //LIGHT BROWN
       stroke = Color.web("#6C5200")
       strokeWidth = 5
@@ -431,12 +429,12 @@ class GameScene (
   val stat = new StackPane:
     children = Seq(statBlurBg, statBg, statContent)
 
-  /** Center */
+  /** CENTER */
   val center = new StackPane:
     children = Seq(gridMap, paneForEnemy)
     translateX = -46
 
-  /** Top */
+  /** TOP */
   val topLeft = new VBox:
     spacing = 10
     padding = Insets(0, 20, 10, 20)
@@ -451,7 +449,7 @@ class GameScene (
     spacing = 20
     alignment = Pos.CenterRight
 
-  /** Bottom */
+  /** BOTTOM */
   private var infoBox = new StackPane:
     alignment = Pos.Center
     maxHeight = 130
@@ -466,8 +464,7 @@ class GameScene (
   /** ROOT */
   val maincontainer = GridPane()
   root = maincontainer
-
-  val column = new ColumnConstraints:
+  val col = new ColumnConstraints:
     percentWidth = 25
   val row0 = new RowConstraints:
     percentHeight = 15
@@ -476,7 +473,7 @@ class GameScene (
   val row2 = new RowConstraints:
       percentHeight = 20
 
-  maincontainer.columnConstraints = Array(column, column, column, column)
+  maincontainer.columnConstraints = Array(col, col, col, col)
   maincontainer.rowConstraints = Array(row0, row1, row2)
 
   maincontainer.add(topLeft, 0, 0, 1, 1)
@@ -486,7 +483,7 @@ class GameScene (
   maincontainer.add(center, 0, 1, 4, 1)
 
   root.value.style = s"-fx-background-color: $bgColor;"
-  
+
   /** HELPER METHODS */
   def squareInGrid(pos: GridPos, gridd: GridPane) =
     gridd.children.find(node => getRowIndex(node) == pos.y && getColumnIndex(node) == pos.x).get.asInstanceOf[javafx.scene.layout.StackPane]
@@ -505,7 +502,6 @@ class GameScene (
     val troops = unit(a, 4) ++ unit(b, 3) ++ unit(c, 2) ++ unit(d, 1)
     if wave != 0 then game.toBeDeployed = troops else ()
 
- 
   /** DETECTING GAMEOVER */
   game.widthPropertyOfHQHP.onChange((_, _, newValue) =>
     if newValue.intValue() <= 0 then
@@ -520,13 +516,14 @@ class GameScene (
   val data = Source.fromFile("src/main/resources/savedGame.txt")
   if data.getLines().nonEmpty && needLoad then 
     game.load()
+    pause.children(1).asInstanceOf[ImageView].image = Image("image/resumeButton.png")
     waveProperty.value = "Wave " + (wave - 1)
     game.enemies.foreach(enemy =>
       enemy.enemyImage.image = Image(enemy.picturePath)
       paneForEnemy.children += enemy.imageView)
     game.gunTowers.foreach(gun =>
       val gridPos = GridPos(gun.getX, gun.getY)
-      squareInGrid(gridPos, gridMap).children(1).asInstanceOf[javafx.scene.image.ImageView].image = Image("image/ci" + gun.name + ".png")
+      squareInGrid(gridPos, gridMap).children(1).asInstanceOf[javafx.scene.image.ImageView].image <== gun.image
       squareInGrid(gridPos, gridMap).children(1).asInstanceOf[javafx.scene.image.ImageView].rotate <== gun.prevAngle)
     game.widthPropertyOfHQHP.value = 45*game.headquarter.HPpercentage
   data.close()

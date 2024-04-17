@@ -1,14 +1,16 @@
 package app.scenes
-
 import app.Scenes
+
+/** SCALAFX IMPORT */
 import scalafx.application.{JFXApp, JFXApp3}
 import scalafx.beans.property.ObjectProperty
+import scalafx.geometry.Pos.*
 import scalafx.scene.Scene
 import scalafx.scene.control.Button
 import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.layout.{BorderPane, StackPane}
-import scalafx.geometry.Pos.*
 
+/** I/O IMPORT */
 import scala.io.Source
 
 class LobbyScene (

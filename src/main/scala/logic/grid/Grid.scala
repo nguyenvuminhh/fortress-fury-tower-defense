@@ -89,29 +89,6 @@ trait Grid[Element: ClassTag](val width: Int, val height: Int):
     *                  will fail with an error) */
   def apply(location: GridPos) = this.elementAt(location)
 
-
-  private def possibleElementAt(location: GridPos) =
-    if this.contains(location) then Some(this(location)) else None
-
-
-  /** Returns a vector of all the neighboring elements of the element indicated by the first
-    * parameter. Depending on the second parameter, either only the four neighbors in cardinal
-    * compass directions (north, east, south, west) are considered, or the four diagonals as well.
-    *
-    * Note that an element at the grid’s edge has fewer neighbors than one in the middle. For
-    * instance, the element at (0, 0) of a 5-by-5 grid has only three neighbors, diagonals included.
-    *
-    * @param middleLoc         the location between the neighbors
-    * @param includeDiagonals  `true` if diagonal neighbors also count (resulting in up to eight neighbors),
-    *                          `false` if only cardinal directions count (resulting in up to four) */
-  def neighbors(middleLoc: GridPos, includeDiagonals: Boolean): Vector[Element] =
-    def neighborsOfLoc(dir: CompassDir) =
-      val cardinal = middleLoc.neighbor(dir)
-      val candidates = if includeDiagonals then Vector(cardinal, cardinal.neighbor(dir.clockwise)) else Vector(cardinal)
-      candidates.flatMap(this.possibleElementAt)
-    CompassDir.Clockwise.flatMap(neighborsOfLoc)
-
-
   /** Returns a collection of all the locations on the grid. */
   def allPositions: Vector[GridPos] =
     (0 until this.size).map( n => GridPos(n % this.width, n / this.width) ).toVector

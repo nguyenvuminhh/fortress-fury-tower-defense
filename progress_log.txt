@@ -89,7 +89,7 @@ Sprint 1: 04.03.24
 
   Schedule: logic is a bit behind, GUI is a lot a head. Can say the project is on schedule
 
-  Goal: resolve all conflict
+  Goal: resolve all difficulties
 
 
 

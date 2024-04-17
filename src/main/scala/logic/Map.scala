@@ -1,8 +1,6 @@
 package logic
 import logic.grid.*
 
-import java.io
-
 abstract class Map extends Grid[Square](32, 11):
   def startingSquare: GridPos
   def HQSquare: GridPos
@@ -12,7 +10,7 @@ abstract class Map extends Grid[Square](32, 11):
   def turningDirection: Vector[Int]
 end Map
 
-object Map1 extends Map:
+class Map1 extends Map:
   
   /** CONDITION OF THE PATH */
   private def initialSquare(x: Int, y: Int): Square =
@@ -75,7 +73,7 @@ object Map1 extends Map:
 
 end Map1
 
-object Map2 extends Map:
+class Map2 extends Map:
 
   /** CONDITION OF THE PATH */
   private def initialSquare(x: Int, y: Int): Square =
