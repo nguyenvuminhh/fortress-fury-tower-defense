@@ -98,7 +98,7 @@ abstract class EnemySoldier(game: Game, baseDamage: Int):
     val info = stringInfo.split("\t").drop(1)
     for _ <- 0 until info(0).toInt do this.advance()
     HP = (maxHP * info(1).toDouble).toInt
-    widthProperty.value = HPbarWidth*HPpercentage
+    widthProperty.value = squareside*HPpercentage
 
 case class Infantry(game: Game) extends EnemySoldier(game, 200):
   override val picturePath = "image/infantry.png"
