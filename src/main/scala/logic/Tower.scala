@@ -13,7 +13,7 @@ import scalafx.scene.text.{Text, TextFlow}
 
 /** OTHER IMPORT */
 import scala.concurrent.Future
-import concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.math.BigDecimal.RoundingMode
 import scala.math.*
 
@@ -62,22 +62,31 @@ case class Headquarter(x: Int, y: Int) extends Tower:
 
     
   /** DESCRIPTION */
+  
+  /** Description is a table:
+   *    - heading is the first row
+   *    - VBox content is the other rows
+   *      + column1, 2 are children of content
+   *    - heading and content are the children of a VBox, which makes a table*/
   def description =
-    val stats = Seq("Level: " -> level, "Gold/10s: " -> getGoldPer10s, "Upgrade Price: " -> upgradePrice,
+    val stats = Seq("Level: " -> level,
+      "Gold/10s: " -> getGoldPer10s,
+      "Upgrade Price: " -> upgradePrice, 
       "Gold back rate: " -> goldBackRate)
+    
     val textFlows = stats.map ((stat, value) =>
       val statText = new Text(stat)
-      statText.style = s"-fx-font-size: 14px; -fx-font-weight: bold;"
+      statText.style = "-fx-font-size: 14px; -fx-font-weight: bold;"
       val valueText = new Text(s"$value")
-      valueText.style = s"-fx-font-size: 14px; -fx-font-weight: normal;"
+      valueText.style = "-fx-font-size: 14px; -fx-font-weight: normal;"
       new TextFlow:
         children = Seq(statText, valueText)
     )
     val info = new VBox:
-      padding = Insets(10, 20, 0, 20)
       val heading = new Text("Headquarter")
-      heading.style = s"-fx-font-size: 20px; -fx-font-weight: bold;"
+      heading.style = "-fx-font-size: 20px; -fx-font-weight: bold;"
       heading.textAlignment = Center
+      
       val content = new HBox:
         spacing = 20
         val column1 = new VBox:
@@ -85,6 +94,7 @@ case class Headquarter(x: Int, y: Int) extends Tower:
         val column2 = new VBox:
           children = textFlows.slice(2, 4)
         children = Seq(column1, column2)
+      padding = Insets(10, 20, 0, 20)
       children = Seq(heading, content)
       spacing = 20
       
@@ -154,7 +164,12 @@ class GunTower(val name: String, x: Int, y: Int, var damage: Int, var fireRate: 
   def rage() = rageConst = 1.15
   def derage() = rageConst = 1
 
-  /** UI */
+  /** DESCRIPTION */
+  /** Description is a table:
+   *    - heading is the first row
+   *    - VBox content is the other rows
+   *      + column1, 2 are children of content
+   *    - heading and content are the children of a VBox, which makes a table*/
   def description =
     val stats = Seq("Level: " -> level, "Upgrade Price: " -> upgradePrice,
       "Damage: " -> damage, "Firerate: " -> roundedFireRate, "Range: " -> range, "Price: " -> price)
@@ -167,7 +182,6 @@ class GunTower(val name: String, x: Int, y: Int, var damage: Int, var fireRate: 
         children = Seq(statText, valueText)
     )
     val info = new VBox:
-      padding = Insets(10, 20, 0, 20)
       val heading = new Text(if getY == -1 then name else s"$name ($getX, $getY)")
       heading.style = s"-fx-font-size: 20px; -fx-font-weight: bold;"
       heading.textAlignment = Center
@@ -180,6 +194,7 @@ class GunTower(val name: String, x: Int, y: Int, var damage: Int, var fireRate: 
         children = Seq(column1, column2)
       children = Seq(heading, content)
       spacing = 20
+      padding = Insets(10, 20, 0, 20)
       
     val bg = new Rectangle:
       width = 300

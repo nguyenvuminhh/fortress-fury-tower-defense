@@ -87,11 +87,11 @@ class GameScene (
           fitHeight = squareside
           fitWidth = squareside
 
+        /** GUN IMAGE */
         val gunImage = new ImageView:
           fitHeight = squareside*0.9
           fitWidth = squareside*0.9
           image = clearPlaceHolder
-
         val HPimage = new StackPane:
           val maxHPbar = new Rectangle:
             width = squareside
@@ -106,20 +106,23 @@ class GameScene (
           children = Seq(maxHPbar, HPbar)
           alignmentInParent = Pos.TopCenter
 
+        /** PLACING HEADQUARTER */
         if GridPos(col, row) == game.map.HQSquare then
           gunImage.image = Image("image/hqImage.png")
           children = Seq(squareImage, gunImage, HPimage)
         else children = Seq(squareImage, gunImage)
 
         onMouseClicked = () =>
+          /** PLACING A GUN */
           if selectedGunIndex != -1 then
             val success = game.place(gunNameCollection(selectedGunIndex), col, row)
             if success then
               val gun = game.map.elementAt(GridPos(col, row)).tower.get.asInstanceOf[GunTower]
               gunImage.image <== gun.image
-              gunImage.rotate <== game.map.elementAt(GridPos(col, row)).tower.get.asInstanceOf[GunTower].prevAngle
+              gunImage.rotate <== gun.prevAngle
               updateGold()
             selectedGunIndex = -1
+          /** SELECTING EXISTING GUN */
           else if !game.map.elementAt(GridPos(col, row)).isEmpty && game.map.elementAt(GridPos(col, row)).isPlacable then
             selectedGridPos = GridPos(col, row)
             infoBox.children = game.map.elementAt(selectedGridPos).tower.get.description
@@ -128,7 +131,7 @@ class GameScene (
 
   val paneForEnemy = new Pane:
     prefWidth = mainStage.width.value
-    prefHeight = mainStage.height.value * 0.65
+    prefHeight = mainStage.height.value * 0.65 // 0.65 is 65%, the percentage of the map in the window
   paneForEnemy.setMouseTransparent(true)
 
   /** LEVEL WAVE TEXT */
@@ -136,6 +139,7 @@ class GameScene (
   val levelWaveLabel = new Text:
     style = s"-fx-font-family: $fontName; -fx-font-weight: bold; -fx-font-size: 20px; -fx-fill: $topTextColor;"
   levelWaveLabel.text <== waveProperty
+
   /** GOLD TEXT */
   val goldValueProperty = StringProperty(gold.toString)
   def updateGold() = goldValueProperty.value = gold.toString
@@ -143,7 +147,6 @@ class GameScene (
     val goldLabel = new Text:
       text = "Gold: "
       style = s"-fx-font-family: $fontName; -fx-font-weight: bold; -fx-font-size: 15; -fx-fill: $topTextColor;"
-
     val goldValue = new Text:
       style = s"-fx-font-family: $fontName; -fx-font-size: 15px; -fx-fill: $topTextColor;"
     goldValue.text <== goldValueProperty
@@ -166,7 +169,7 @@ class GameScene (
     style = s"-fx-font-family: $fontName; -fx-font-weight: bold; -fx-font-size: 36px; -fx-fill: $topTextColor;"
   scoreText.text <== scoreProperty
 
-  /** Variables for speedup and setting buttons */
+  /** BUTTONS VARIABLES */
   val bgSize = 70
   val iconSize = 50
 
@@ -216,8 +219,7 @@ class GameScene (
       speedupIconsIndex = (speedupIconsIndex+1)%5
       speedupIcon.image = Image("image/speed" + speedupIcons(speedupIconsIndex) + ".png")
 
-
-    /** QUIT */
+  /** QUIT BUTTON */
   val quit = new StackPane:
     val quitBg = new Rectangle:
       arcHeight = 30
@@ -241,7 +243,7 @@ class GameScene (
   val timerText = new Text:
     style = s"-fx-font-size: 20pt; -fx-fill: $topTextColor;"
 
-  def updateTimerText(): Unit =
+  def tick(): Unit =
     //CONVERT TO HH:MM:SS
     val hours = elapsedTime / 3600
     val minutes = (elapsedTime % 3600) / 60
@@ -251,12 +253,10 @@ class GameScene (
     //UPDATE SCORE AND GOLD AND HP
     scoreProperty.value = game.getScore.toString
     updateGold()
-    if game.getSurvivingTimeInOneFifthSec%50 == 0 then
-      game.giveGold()
+    if game.getSurvivingTimeInOneFifthSec%50 == 0 then game.giveGold()
     HPProperty.value = HP
     //ADVANCE THE ENEMY
-    if game.getFreezeEndTime == 0 then
-      game.enemies.foreach(_.advance())
+    if game.getFreezeEndTime == 0 then game.enemies.foreach(_.advance())
     //FILTER DEAD ENEMY
     game.enemies.foreach(enemy =>
       if enemy.isDead then
@@ -266,12 +266,14 @@ class GameScene (
         Platform.runLater(() -> {paneForEnemy.children -= enemy.imageView}))
     game.filterDeadEnemy()
     //DEPLOY ENEMY
+      //check if its time to deploy AND it is allowed to deploy
     if (game.getSurvivingTimeInOneFifthSec == game.nextDeployTime || game.enemies.isEmpty) && game.getSurvivingTimeInOneFifthSec >= game.cannotDeployUntil then
       deployWave(wave)
       game.nextDeployTime = game.getSurvivingTimeInOneFifthSec + 120*5
       game.nextWave
       waveProperty.value = "Wave " + (wave - 1)
       game.cannotDeployUntil = game.getSurvivingTimeInOneFifthSec + 10*5
+      //deploy one troop every 1 second
     if game.toBeDeployed.nonEmpty && game.getSurvivingTimeInOneFifthSec%5 == 0 then
       val enemy = game.toBeDeployed.head
       game.deploy(enemy)
@@ -280,7 +282,7 @@ class GameScene (
         paneForEnemy.children += enemy.imageView})
       game.toBeDeployed = game.toBeDeployed.drop(1)
     //SHOOT
-    val temp = game.gunTowerCollection.clone()
+    val temp = game.gunTowerCollection.clone() //to avoid mutation while iteration error
     temp.foreach(_.shoot())
     //END ABILITY
     if game.getSurvivingTimeInOneFifthSec == game.getRageEndTime.toLong then game.derage()
@@ -289,12 +291,14 @@ class GameScene (
   def increaseTime(): Unit =
     if !game.getIsPaused then
       game.increaseTime()
-      updateTimerText()
+      tick()
 
-  val timerThread = new Thread(() =>
-    while !game.getIsOver do
-      Thread.sleep((200*1.0/game.pace).toLong)
-      increaseTime())
+  val timerThread = new Thread{
+    override def run() =
+      while !game.getIsOver do
+        Thread.sleep((200.0/game.pace).toLong)
+        increaseTime()
+  }
   timerThread.start()
 
   /** ABILITIES */
@@ -390,7 +394,7 @@ class GameScene (
       arcHeight = 30
       arcWidth = 30
       fill = Color.web("#F4C55E") //LIGHT BROWN
-      stroke = Color.web("#6C5200")
+      stroke = Color.web("#6C5200") //DARK BROWN
       strokeWidth = 5
     padding = Insets(50, 0, 0, 0)
     children = Seq(bg, content)
@@ -514,18 +518,24 @@ class GameScene (
 
   /** LOAD GAME */
   val data = Source.fromFile("src/main/resources/savedGame.txt")
-  if data.getLines().nonEmpty && needLoad then 
+  if data.getLines().nonEmpty && needLoad then
+    //LOAD
     game.load()
-    pause.children(1).asInstanceOf[ImageView].image = Image("image/resumeButton.png")
+    //UPDATE UI OF TEXT AND BUTTON
+    pause.children(1).asInstanceOf[javafx.scene.image.ImageView].image = Image("image/resumeButton.png")
     waveProperty.value = "Wave " + (wave - 1)
+    //UPDATE UI OF ENEMY
     game.enemies.foreach(enemy =>
       enemy.enemyImage.image = Image(enemy.picturePath)
       paneForEnemy.children += enemy.imageView)
+    //UPDATE UI OF GUN
     game.gunTowers.foreach(gun =>
       val gridPos = GridPos(gun.getX, gun.getY)
-      squareInGrid(gridPos, gridMap).children(1).asInstanceOf[javafx.scene.image.ImageView].image <== gun.image
-      squareInGrid(gridPos, gridMap).children(1).asInstanceOf[javafx.scene.image.ImageView].rotate <== gun.prevAngle)
-    game.widthPropertyOfHQHP.value = 45*game.headquarter.HPpercentage
+      val gunImageView = squareInGrid(gridPos, gridMap).children(1).asInstanceOf[javafx.scene.image.ImageView]
+      gunImageView.image <== gun.image
+      gunImageView.rotate <== gun.prevAngle)
+    //UPDATE UI OF HEADQUARTER
+    game.widthPropertyOfHQHP.value = squareside*game.headquarter.HPpercentage
   data.close()
 
   /** DELETE THE SAVED GAME FILE */
@@ -540,10 +550,11 @@ class GameScene (
       case "r" =>
         if selectedGridPos == game.map.HQSquare then Alert(AlertType.Warning, "You cannot remove the headquarter").showAndWait()
         else if selectedGridPos != GridPos(-1, -1) then
-          squareInGrid(selectedGridPos, gridMap).children(1).asInstanceOf[javafx.scene.image.ImageView].image.unbind()
-          squareInGrid(selectedGridPos, gridMap).children(1).asInstanceOf[javafx.scene.image.ImageView].image = clearPlaceHolder
+          val gunImageView = squareInGrid(selectedGridPos, gridMap).children(1).asInstanceOf[javafx.scene.image.ImageView]
+          gunImageView.image.unbind()
+          gunImageView.image = clearPlaceHolder
           game.remove(selectedGridPos)
-          selectedGridPos = GridPos(-1, -1)
+          selectedGridPos = GridPos(-1, -1) //reset
           updateGold()
         else Alert(AlertType.Warning, "You did not select a tower").showAndWait()
       /** CLEAR GUN SELECTION */
@@ -555,5 +566,3 @@ class GameScene (
         if selectedGridPos != GridPos(-1, -1) then game.upgrade(selectedGridPos)
         else Alert(AlertType.Warning, "You did not select a tower").showAndWait()
       case _ => ()
-
-

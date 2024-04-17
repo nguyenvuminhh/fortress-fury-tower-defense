@@ -8,7 +8,7 @@ import logic.{Cannon, Cavalry, Game, Infantry, Map1, Turret, Headquarter}
 
 
 class Test extends AnyFlatSpec with Matchers:
-  val game = Game(Map1)
+  val game = Game(new logic.Map1())
 
   //TODO: please comment line 144 and 147 of Tower.scala before testing function shoot()
 

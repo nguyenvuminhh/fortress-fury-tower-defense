@@ -42,7 +42,7 @@ abstract class EnemySoldier(game: Game, baseDamage: Int):
   def getHeading = heading
 
   /** ADVANCE METHODS */
-  val adjustConst = 45-0.25
+  val adjustConst = 45-0.25 //calculated using linear relationshop
   var step = 0
   def advance() =
     if x == this.game.map.crashSquare.x && y == this.game.map.crashSquare.y then crash()
@@ -68,21 +68,21 @@ abstract class EnemySoldier(game: Game, baseDamage: Int):
   def crash() =
     game.headquarter.minusHP(damage)
     HP = 0
-    game.widthPropertyOfHQHP.value = 45*game.headquarter.HPpercentage
+    game.widthPropertyOfHQHP.value = squareside*game.headquarter.HPpercentage
   
   /** UI */
   def picturePath: String
-  val HPbarWidth = 45
-  val widthProperty = DoubleProperty(HPbarWidth*HPpercentage)
+  val squareside = 45
+  val widthProperty = DoubleProperty(squareside*HPpercentage)
   val enemyImage = new ImageView:
-    fitHeight = 45
-    fitWidth = 45
+    fitHeight = squareside
+    fitWidth = squareside
     rotate = 90
     layoutX = (getX*adjustConst)
     layoutY = (getY*adjustConst)
   val HPimage = new StackPane:
     val maxHPbar = new Rectangle:
-      width = HPbarWidth
+      width = squareside
       height = 5
       fill = Color.Black
     val HPbar = new Rectangle:
