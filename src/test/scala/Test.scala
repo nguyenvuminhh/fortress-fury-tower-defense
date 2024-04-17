@@ -10,6 +10,8 @@ import logic.{Cannon, Cavalry, Game, Infantry, Map1, Turret, Headquarter}
 class Test extends AnyFlatSpec with Matchers:
   val game = Game(Map1)
 
+  //TODO: please comment line 144 and 147 of Tower.scala before testing function shoot()
+
   /** giveGold() */
   "Gold" should "increased by 10 after giveGold() was called once" in {
     val temp = game.getGold
@@ -106,6 +108,5 @@ class Test extends AnyFlatSpec with Matchers:
   it should "shoot an in range enemy" in {
     for _ <- 0 until 5 do game.enemies.head.advance()
     game.gunTowers.head.shoot()
-    //NOTE: comment line 144 and 147 before testing this function
     game.enemies.head.HPpercentage < 1 shouldEqual true
   }
