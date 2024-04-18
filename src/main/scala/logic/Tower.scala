@@ -31,13 +31,12 @@ case class Headquarter(x: Int, y: Int) extends Tower:
   private var level = 1 //NEED SAVING
 
   /** HP */
-  private var HP = 2000
-  def getHP = HP
-  private var maxHP = 2000
+  private var maxHP = 20000
   def getMaxHP = maxHP
-  def HPpercentage = HP*1.0/maxHP //NEED SAVING
+  private var HP = 20000 //NEED SAVING
+  def getHP = HP
+  def HPpercentage = HP*1.0/maxHP
   def minusHP(amount: Int) = HP -= amount
-
 
   /** GOLD */
   private var goldPer10s = 10 //NEED SAVING
@@ -49,20 +48,20 @@ case class Headquarter(x: Int, y: Int) extends Tower:
   def upgradePrice = 500 + 200*level
   def upgrade() =
     level += 1
-    HP = (HP * 1.05).toInt
-    maxHP = (maxHP * 1.05).toInt
-    goldPer10s = (goldPer10s * 1.05).toInt
+    HP = (HP * levelCoef).toInt
+    maxHP = (maxHP * levelCoef).toInt
+    goldPer10s = (goldPer10s * levelCoef).toInt
     goldBackRate = min(goldBackRate + 0.1, 0.9)
 
   /** LOAD */
   def load(stringInfo: String) =
     val info = stringInfo.split("\t").takeRight(2)
-    for _ <- 0 until info(0).toInt do this.upgrade()
+    for _ <- 1 until info(0).toInt do this.upgrade()
     HP = info(1).toInt
 
     
   /** DESCRIPTION */
-  
+
   /** Description is a table:
    *    - heading is the first row
    *    - VBox content is the other rows
@@ -71,22 +70,22 @@ case class Headquarter(x: Int, y: Int) extends Tower:
   def description =
     val stats = Seq("Level: " -> level,
       "Gold/10s: " -> getGoldPer10s,
-      "Upgrade Price: " -> upgradePrice, 
-      "Gold back rate: " -> goldBackRate)
-    
+      "Upgrade Price: " -> upgradePrice,
+      "Gold back rate: " -> BigDecimal(goldBackRate).setScale(1, BigDecimal.RoundingMode.HALF_UP).toDouble)
+
     val textFlows = stats.map ((stat, value) =>
       val statText = new Text(stat)
-      statText.style = "-fx-font-size: 14px; -fx-font-weight: bold;"
+      statText.style = Helper.gothamBold(14)
       val valueText = new Text(s"$value")
-      valueText.style = "-fx-font-size: 14px; -fx-font-weight: normal;"
+      valueText.style = Helper.gothamNormal(14)
       new TextFlow:
         children = Seq(statText, valueText)
     )
     val info = new VBox:
       val heading = new Text("Headquarter")
-      heading.style = "-fx-font-size: 20px; -fx-font-weight: bold;"
+      heading.style = Helper.gothamBold(20)
       heading.textAlignment = Center
-      
+
       val content = new HBox:
         spacing = 20
         val column1 = new VBox:
@@ -175,15 +174,15 @@ class GunTower(val name: String, x: Int, y: Int, var damage: Int, var fireRate: 
       "Damage: " -> damage, "Firerate: " -> roundedFireRate, "Range: " -> range, "Price: " -> price)
     val textFlows = stats.map ((stat, value) =>
       val statText = new Text(stat)
-      statText.style = s"-fx-font-size: 14px; -fx-font-weight: bold;"
+      statText.style = Helper.gothamBold(14)
       val valueText = new Text(s"$value")
-      valueText.style = s"-fx-font-size: 14px; -fx-font-weight: normal;"
+      valueText.style = Helper.gothamNormal(14)
       new TextFlow:
         children = Seq(statText, valueText)
     )
     val info = new VBox:
       val heading = new Text(if getY == -1 then name else s"$name ($getX, $getY)")
-      heading.style = s"-fx-font-size: 20px; -fx-font-weight: bold;"
+      heading.style = Helper.gothamBold(20)
       heading.textAlignment = Center
       val content = new HBox:
         spacing = 20

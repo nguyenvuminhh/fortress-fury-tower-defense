@@ -59,7 +59,7 @@ class Game (val map: Map):
 
   /** TOWERS */
   var headquarter = Headquarter(map.HQSquare.x, map.HQSquare.y) //NEED SAVING
-  val widthPropertyOfHQHP = DoubleProperty(45*headquarter.HPpercentage)
+  val widthPropertyOfHQHP = DoubleProperty(Helper.squareside*headquarter.HPpercentage)
   map.elementAt(map.HQSquare).addTower(headquarter)
   val gunTowerCollection = Buffer[GunTower]() //NEED SAVING
   def gunTowers = gunTowerCollection
@@ -144,12 +144,13 @@ class Game (val map: Map):
       gunTowerCollection += gunTower
       gold -= gunTower.price
       true
-    else if gunTowerType._2 > gold then
-      Alert(AlertType.Warning, "Not enough money").showAndWait()
-      false
-    else
+    else if !map.elementAt(GridPos(x, y)).isEmpty then
       Alert(AlertType.Warning, "You cannot place a gun on the road or an occupied square").showAndWait()
       false
+    else
+      Alert(AlertType.Warning, "Not enough money").showAndWait()
+      false
+
 
   def upgrade(gridPos: GridPos) =
     val square = map.elementAt(gridPos)

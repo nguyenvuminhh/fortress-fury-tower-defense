@@ -3,6 +3,7 @@ import app.FortressFuryApp.stage
 import app.Scenes
 import logic.*
 import logic.grid.GridPos
+import logic.Helper
 
 /** I/O IMPORT */
 import java.io.{File, FileWriter, PrintWriter}
@@ -14,7 +15,8 @@ import scalafx.application.{JFXApp3, Platform}
 import scalafx.beans.binding.BindingIncludes.*
 import scalafx.beans.property.{DoubleProperty, ObjectProperty, StringProperty}
 import scalafx.delegate.SFXDelegate
-import scalafx.geometry.{Insets, Pos}
+import scalafx.geometry.Insets
+import scalafx.geometry.Pos.*
 import scalafx.scene.Scene
 import scalafx.scene.SceneIncludes.jfxNode2sfx
 import scalafx.scene.control.Alert
@@ -44,14 +46,9 @@ class GameScene (
 
   /** COLOR VARIABLES */
   val buttonColor = Color.web("#BF9000") //DARK BROWN
-  val topTextColor = "#000000"
-  val fontName = "Gotham"
   val bgColor = "#ffffff"
 
-  /** UI VARIABLES */
-  val squareside = 45
-  val colNum = 33
-  val rowNum = 10
+  /** SELECTION VARIABLES */
   private var selectedGunIndex = -1
   private var gunNameCollection: Vector[(String, Int)] = Vector(("Sharpshooter", 120), ("Cannon", 150), ("Turret", 200), ("GrenadeLauncher", 250), ("Sniper", 300), ("RocketLauncher", 500))
   private var selectedGridPos = GridPos(-1, -1)
@@ -70,6 +67,8 @@ class GameScene (
   val clearPlaceHolder = Image("image/clearPlaceHolder.png")
 
   /** GRID */
+  val colNum = 33
+  val rowNum = 10
   val gridMap = new GridPane():
     vgap = -1
     hgap = -1
@@ -82,29 +81,31 @@ class GameScene (
         val squareImage = new ImageView:
           image =
             if squareType == "buildable" then
-              new Image("image/" + squareType + min(Random.nextInt(30)+1, 7).toString + ".png")
-            else new Image("image/" + squareType +  ".png")
-          fitHeight = squareside
-          fitWidth = squareside
+              //rate of spawning rock square or cactus square is 1/15, and rate of spawning empty square is 13/15
+              new Image("image/" + squareType + min(Random.nextInt(15)+1, 3).toString + ".png")
+            else
+              new Image("image/" + squareType +  ".png")
+          fitHeight = Helper.squareside
+          fitWidth = Helper.squareside
 
         /** GUN IMAGE */
         val gunImage = new ImageView:
-          fitHeight = squareside*0.9
-          fitWidth = squareside*0.9
+          fitHeight = Helper.squareside*0.9
+          fitWidth = Helper.squareside*0.9
           image = clearPlaceHolder
         val HPimage = new StackPane:
           val maxHPbar = new Rectangle:
-            width = squareside
+            width = Helper.squareside
             height = 5
             fill = Color.Black
-            alignmentInParent = Pos.TopLeft
+            alignmentInParent = TopLeft
           val HPbar = new Rectangle:
             width <== game.widthPropertyOfHQHP
             height = 5
             fill = Color.Green
-            alignmentInParent = Pos.TopLeft
+            alignmentInParent = TopLeft
           children = Seq(maxHPbar, HPbar)
-          alignmentInParent = Pos.TopCenter
+          alignmentInParent = TopCenter
 
         /** PLACING HEADQUARTER */
         if GridPos(col, row) == game.map.HQSquare then
@@ -114,7 +115,7 @@ class GameScene (
 
         onMouseClicked = () =>
           /** PLACING A GUN */
-          if selectedGunIndex != -1 then
+          if selectedGunIndex != -1 && !game.getIsPaused then
             val success = game.place(gunNameCollection(selectedGunIndex), col, row)
             if success then
               val gun = game.map.elementAt(GridPos(col, row)).tower.get.asInstanceOf[GunTower]
@@ -123,7 +124,8 @@ class GameScene (
               updateGold()
             selectedGunIndex = -1
           /** SELECTING EXISTING GUN */
-          else if !game.map.elementAt(GridPos(col, row)).isEmpty && game.map.elementAt(GridPos(col, row)).isPlacable then
+          //check if the square has a tower
+          else if game.map.elementAt(GridPos(col, row)).tower.nonEmpty then
             selectedGridPos = GridPos(col, row)
             infoBox.children = game.map.elementAt(selectedGridPos).tower.get.description
 
@@ -135,9 +137,9 @@ class GameScene (
   paneForEnemy.setMouseTransparent(true)
 
   /** LEVEL WAVE TEXT */
-  val waveProperty = StringProperty("Wave" + (wave -1))
+  val waveProperty = StringProperty("Wave" + (wave - 1))
   val levelWaveLabel = new Text:
-    style = s"-fx-font-family: $fontName; -fx-font-weight: bold; -fx-font-size: 20px; -fx-fill: $topTextColor;"
+    style = Helper.gothamBold(20)
   levelWaveLabel.text <== waveProperty
 
   /** GOLD TEXT */
@@ -146,9 +148,9 @@ class GameScene (
   val goldText = new TextFlow:
     val goldLabel = new Text:
       text = "Gold: "
-      style = s"-fx-font-family: $fontName; -fx-font-weight: bold; -fx-font-size: 15; -fx-fill: $topTextColor;"
+      style = Helper.gothamBold(15)
     val goldValue = new Text:
-      style = s"-fx-font-family: $fontName; -fx-font-size: 15px; -fx-fill: $topTextColor;"
+      style = Helper.gothamNormal(15)
     goldValue.text <== goldValueProperty
     children = Seq(goldLabel, goldValue)
 
@@ -157,16 +159,16 @@ class GameScene (
   val HPText = new TextFlow:
     val HPLabel = new Text:
       text = "HP: "
-      style = s"-fx-font-family: $fontName; -fx-font-weight: bold; -fx-font-size: 15px; -fx-fill: $topTextColor;"
+      style = Helper.gothamBold(15)
     val HPValue = new Text:
-      style = s"-fx-font-family: $fontName; -fx-font-size: 15px; -fx-fill: $topTextColor;"
+      style = Helper.gothamNormal(15)
     HPValue.text <== HPProperty
     children = Seq(HPLabel, HPValue)
 
   /** SCORE TEXT */
   val scoreProperty = StringProperty(score.toString)
   val scoreText = new Text:
-    style = s"-fx-font-family: $fontName; -fx-font-weight: bold; -fx-font-size: 36px; -fx-fill: $topTextColor;"
+    style = Helper.gothamBold(36)
   scoreText.text <== scoreProperty
 
   /** BUTTONS VARIABLES */
@@ -189,7 +191,7 @@ class GameScene (
       preserveRatio = true
 
     children = Seq(pauseBg, pauseIcon)
-    alignment = Pos.Center
+    alignment = Center
     onMouseClicked = () =>
       if !game.getIsPaused then
         game.pause()
@@ -213,7 +215,7 @@ class GameScene (
       image = Image("image/speed" + speedupIcons(speedupIconsIndex) + ".png")
       preserveRatio = true
     children = Seq(speedupBg, speedupIcon)
-    alignment = Pos.Center
+    alignment = Center
     onMouseClicked = () =>
       game.speedup()
       speedupIconsIndex = (speedupIconsIndex+1)%5
@@ -233,7 +235,7 @@ class GameScene (
       image = Image("image/quitButton.png")
       preserveRatio = true
     children = Seq(quitBg, quitIcon)
-    alignment = Pos.Center
+    alignment = Center
     onMouseClicked = () =>
       game.saveGame()
       selectedScene.value = Scenes.LobbyScene
@@ -241,7 +243,7 @@ class GameScene (
   /** TIME CLOCK */
   def elapsedTime: Long = game.getSurvivingTimeInOneFifthSec/5
   val timerText = new Text:
-    style = s"-fx-font-size: 20pt; -fx-fill: $topTextColor;"
+    style = Helper.gothamNormal(30)
 
   def tick(): Unit =
     //CONVERT TO HH:MM:SS
@@ -323,14 +325,14 @@ class GameScene (
     priceLabel.font = Font.font("Arial", FontWeight.Bold, null, 20)
 
     val contentOfButton = new VBox:
-      alignment = Pos.BaselineCenter
+      alignment = BaselineCenter
       children = Array(abilityPicture, priceLabel)
       padding = Insets(btWidth/15, 0, 0, 0)
 
     new StackPane:
       maxHeight = btHeight
       children = Seq(bg, contentOfButton)
-      alignment = Pos.Center
+      alignment = Center
       onMouseClicked = () =>
         i match
           case 0 => game.poison()
@@ -358,14 +360,14 @@ class GameScene (
     priceLabel.font = Font.font("Arial", FontWeight.Bold, null, 20)
 
     val contentOfButton = new VBox:
-      alignment = Pos.BaselineCenter
+      alignment = BaselineCenter
       children = Array(gunPicture, priceLabel)
       padding = Insets(btWidth/15, 0, 0, 0)
 
     new StackPane:
       maxHeight = btHeight
       children = Seq(bg, contentOfButton)
-      alignment = Pos.Center
+      alignment = Center
       onMouseClicked = () =>
         selectedGunIndex = i
         infoBox.children = game.infoGunTowers(i).description
@@ -374,20 +376,20 @@ class GameScene (
   /** GAME OVER */
   val gameOver = new Text:
     text = "GAME OVER"
-    style = "-fx-font-family: Gotham; -fx-font-weight: bold; -fx-font-size: 45;"
+    style = Helper.gothamBold(45)
   val scoreStat = new Text:
-    style = "-fx-font-family: Gotham; -fx-font-weight: bold; -fx-font-size: 35;"
+    style = Helper.gothamBold(35)
   val survivingTime = new Text:
-    style = "-fx-font-family: Gotham; -fx-font-weight: bold; -fx-font-size: 20;"
+    style = Helper.gothamBold(20)
   val wavesSurvived = new Text:
-    style = "-fx-font-family: Gotham; -fx-font-weight: bold; -fx-font-size: 25;"
+    style = Helper.gothamBold(25)
   val enemiesKilled = new Text:
-    style = "-fx-font-family: Gotham; -fx-font-weight: bold; -fx-font-size: 25;"
+    style = Helper.gothamBold(25)
 
   val waveEnemyVbox = new StackPane:
     val content = new VBox:
       children = Seq(wavesSurvived, enemiesKilled)
-      alignment = Pos.Center
+      alignment = Center
     val bg = new Rectangle:
       height = 100
       width = 300
@@ -402,7 +404,7 @@ class GameScene (
   val returnHome = new StackPane:
     val content = new Text:
       text = "RETURN HOME"
-      style = "-fx-font-family: Gotham; -fx-font-weight: bold; -fx-font-size: 25;"
+      style = Helper.gothamBold(25)
       onMouseClicked = (_) => selectedScene.value = Scenes.LobbyScene
     val bg = new Rectangle:
       width = 200
@@ -417,7 +419,7 @@ class GameScene (
 
   val statContent = new VBox:
     spacing = 5
-    alignment = Pos.Center
+    alignment = Center
     prefWidth = 200
     children = Seq(gameOver, scoreStat, survivingTime, waveEnemyVbox, returnHome)
   val statBg = new Rectangle:
@@ -444,26 +446,25 @@ class GameScene (
     padding = Insets(0, 20, 10, 20)
     children = Seq(levelWaveLabel, goldText, HPText)
   val topCenter = new VBox:
-    alignment = Pos.Center
+    alignment = Center
     spacing = 10
     children = Seq(scoreText, timerText)
   val topRight = new HBox:
     children = Seq(quit, speedup, pause)
     padding = Insets(0, 10, 0, 0)
     spacing = 20
-    alignment = Pos.CenterRight
+    alignment = CenterRight
 
   /** BOTTOM */
   private var infoBox = new StackPane:
-    alignment = Pos.Center
+    alignment = Center
     maxHeight = 130
     maxWidth = 300
-
   val bottom = new HBox:
     children = gunButtonsArray ++ abilityButtonArray ++ Array(infoBox)
     spacing = 15
     padding = Insets(0, 70, 10, 10)
-    alignment = Pos.CenterLeft
+    alignment = CenterLeft
 
   /** ROOT */
   val maincontainer = GridPane()
@@ -489,8 +490,8 @@ class GameScene (
   root.value.style = s"-fx-background-color: $bgColor;"
 
   /** HELPER METHODS */
-  def squareInGrid(pos: GridPos, gridd: GridPane) =
-    gridd.children.find(node => getRowIndex(node) == pos.y && getColumnIndex(node) == pos.x).get.asInstanceOf[javafx.scene.layout.StackPane]
+  def squareInGrid(pos: GridPos, grid: GridPane) =
+    grid.children.find(node => getRowIndex(node) == pos.y && getColumnIndex(node) == pos.x).get.asInstanceOf[javafx.scene.layout.StackPane]
   def unit(amount: Int, unitType: Int): Vector[EnemySoldier] =
     Vector.tabulate(amount){_ =>
       unitType match
@@ -535,7 +536,7 @@ class GameScene (
       gunImageView.image <== gun.image
       gunImageView.rotate <== gun.prevAngle)
     //UPDATE UI OF HEADQUARTER
-    game.widthPropertyOfHQHP.value = squareside*game.headquarter.HPpercentage
+    game.widthPropertyOfHQHP.value = Helper.squareside*game.headquarter.HPpercentage
   data.close()
 
   /** DELETE THE SAVED GAME FILE */
@@ -563,6 +564,6 @@ class GameScene (
         selectedGunIndex = -1
       /** UPGRADE GUN */
       case "u" =>
-        if selectedGridPos != GridPos(-1, -1) then game.upgrade(selectedGridPos)
-        else Alert(AlertType.Warning, "You did not select a tower").showAndWait()
+        if selectedGridPos != GridPos(-1, -1) && !game.getIsPaused then game.upgrade(selectedGridPos)
+        else if selectedGridPos == GridPos(-1, -1) then Alert(AlertType.Warning, "You did not select a tower").showAndWait()
       case _ => ()

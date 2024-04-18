@@ -29,9 +29,14 @@ class MapSelectionScene (
       onMouseClicked = (_) => selectedScene.value = Scenes.NewGameScene2
       preserveRatio = true
       fitWidth = 400
-    children = Seq(map1, map2)
+    val map3 = new ImageView:
+      image = Image("image/map3.png")
+      onMouseClicked = (_) => selectedScene.value = Scenes.NewGameScene3
+      preserveRatio = true
+      fitWidth = 400
+    children = Seq(map1, map2, map3)
     prefWidth = 600
-    spacing = 300
+    spacing = 50
     alignment = Center
 
   /** BACK BUTTON */

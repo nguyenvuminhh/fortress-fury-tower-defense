@@ -1,5 +1,6 @@
 package app.scenes
 import app.Scenes
+import logic.Helper
 
 /** SCALAFX IMPORT */
 import scalafx.application.{JFXApp, JFXApp3}
@@ -33,7 +34,7 @@ class TutorialScene (
         "Remove a gun: Click an existing gun on the map, then press key \"r\".\n\n" +
         "Deselect a gun: Press key \"y\".\n\nUse ability: Click the ability."
 
-      style = s"-fx-font-family: Gotham; -fx-font-weight: bold; -fx-font-size: 20px;"
+      style = Helper.gothamBold(20)
     children = Seq(bg, content)
   /** BUTTONS */
   val backButton = new ImageView:

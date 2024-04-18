@@ -55,7 +55,11 @@ class LobbyScene (
         preserveRatio = true
         translateY = 230
         alignmentInParent = Center
-        onMouseClicked = (_) => selectedScene.value = if mapType == 1 then Scenes.ContinueGameScene1 else Scenes.ContinueGameScene2
+        onMouseClicked = (_) =>
+          selectedScene.value =
+            if mapType == 1 then Scenes.ContinueGameScene1
+            else if mapType == 2 then Scenes.ContinueGameScene2
+            else Scenes.ContinueGameScene3
       children = Seq(bg, playButton, leaderboardButton, continueButton)
     else children = Seq(bg, playButton, leaderboardButton)
 

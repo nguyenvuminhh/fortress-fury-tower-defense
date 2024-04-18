@@ -1,5 +1,6 @@
 package app.scenes
 import app.Scenes
+import logic.Helper
 
 /** SCALAFX IMPORT */
 import scalafx.Includes.*
@@ -59,7 +60,7 @@ class LeaderboardScene(
               height = 50
               fill = if i%2 == 0 then Color.web("#BF9000") else Color.web("#F4C55E")
             val text = new Text(dataRowSorted(i)(j))
-            text.style = if i == 0 then s"-fx-font-family: Gotham; -fx-font-weight: bold; -fx-font-size: 15;" else s"-fx-font-family: Gotham; -fx-font-size: 15;"
+            text.style = if i == 0 then Helper.gothamBold(15) else Helper.gothamNormal(15)
             children = Seq(bg, text)
         }
       row)
