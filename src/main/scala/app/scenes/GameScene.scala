@@ -246,12 +246,8 @@ class GameScene (
     style = Helper.gothamNormal(30)
 
   def tick(): Unit =
-    //CONVERT TO HH:MM:SS
-    val hours = elapsedTime / 3600
-    val minutes = (elapsedTime % 3600) / 60
-    val seconds = elapsedTime % 60
     //UPDATE TIMETEXT
-    timerText.text = f"$hours%02d:$minutes%02d:$seconds%02d"
+    timerText.text = Helper.secondToHMS(elapsedTime)
     //UPDATE SCORE AND GOLD AND HP
     scoreProperty.value = game.getScore.toString
     updateGold()
@@ -369,6 +365,7 @@ class GameScene (
       children = Seq(bg, contentOfButton)
       alignment = Center
       onMouseClicked = () =>
+        selectedGridPos = GridPos(-1, -1) //reset to avoid accident upgrade/remove
         selectedGunIndex = i
         infoBox.children = game.infoGunTowers(i).description
 }

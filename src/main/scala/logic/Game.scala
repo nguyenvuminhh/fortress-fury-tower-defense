@@ -175,11 +175,11 @@ class Game (val map: Map):
   private var rageEndTime = 0.0
   def getRageEndTime = rageEndTime
   def rage() =
-    if gold >= abilityPrice then
+    if gold >= abilityPrice && !isPaused then
       gold -= abilityPrice
       gunTowers.foreach(gun => gun.rage())
       rageEndTime = survivingTimeInOneFifthSec + 15*5
-    else
+    else if gold < abilityPrice then
       Alert(AlertType.Warning, "Not enough money").showAndWait()
   def derage() =
     gunTowers.foreach(gun => gun.derage())
@@ -188,20 +188,20 @@ class Game (val map: Map):
   private var freezeEndTime = 0.0
   def getFreezeEndTime = freezeEndTime
   def freeze() =
-    if gold >= abilityPrice then
+    if gold >= abilityPrice && !isPaused then
       gold -= abilityPrice
       freezeEndTime = survivingTimeInOneFifthSec + 15*5
-    else
+    else if gold < abilityPrice then
       Alert(AlertType.Warning, "Not enough money").showAndWait()
   def defrost() = freezeEndTime = 0
   //POISON
   def poison() =
-    if gold >= abilityPrice then
+    if gold >= abilityPrice && !isPaused then
       gold -= abilityPrice
       enemies.foreach(enemy =>
         enemy.minusHP(100)
         enemy.widthProperty.value = 50*enemy.HPpercentage)
-    else
+    else if gold < abilityPrice then
       Alert(AlertType.Warning, "Not enough money").showAndWait()
 
   /** SAVE GAME */

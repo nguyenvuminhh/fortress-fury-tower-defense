@@ -36,7 +36,7 @@ class LeaderboardScene(
         val date = line.split("\t").head
         val map = line.split("\t")(1)
         val score = line.split("\t")(2)
-        val survivingTime = secondToHMS(line.split("\t")(3))
+        val survivingTime = Helper.secondToHMS(line.split("\t")(3).toLong)
         val wavesSurvived = line.split("\t")(4)
         val enemiesKilled = line.split("\t")(5)
         dataRow = dataRow.appended(Seq(date, map, score, survivingTime, wavesSurvived, enemiesKilled))
@@ -100,10 +100,3 @@ class LeaderboardScene(
   maincontainer.add(backButton, 0, 0, 1, 1)
   maincontainer.add(banner, 1, 0, 1, 1)
   maincontainer.add(table, 0, 1, 3, 1)
-
-  def secondToHMS(second: String) =
-    val sec = second.toLong
-    val hours = sec / 3600
-    val minutes = (sec % 3600) / 60
-    val seconds = sec % 60
-    f"$hours%02d:$minutes%02d:$seconds%02d"

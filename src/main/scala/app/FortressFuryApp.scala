@@ -1,6 +1,5 @@
 package app
 
-
 import app.scenes.*
 import logic.{Game, Map1, Map2, Map3}
 import scalafx.application.JFXApp3
@@ -19,8 +18,6 @@ import scalafx.stage.Screen
 
 import java.io.{FileInputStream, InputStream, ObjectInputStream}
 import scala.math.min
-import scala.util.Random
-
 
 object FortressFuryApp extends JFXApp3:
 
@@ -39,13 +36,13 @@ object FortressFuryApp extends JFXApp3:
         case Scenes.NewGameScene1 => stage.setScene(GameScene(mainStage, selectedScene, new Game(new Map1), false))
 
         case Scenes.NewGameScene2 => stage.setScene(GameScene(mainStage, selectedScene, new Game(new Map2), false))
-         
+
         case Scenes.NewGameScene3 => stage.setScene(GameScene(mainStage, selectedScene, new Game(new Map3), false))
 
         case Scenes.ContinueGameScene1 => stage.setScene(GameScene(mainStage, selectedScene, new Game(new Map1), true))
 
         case Scenes.ContinueGameScene2 => stage.setScene(GameScene(mainStage, selectedScene, new Game(new Map2), true))
-        
+
         case Scenes.ContinueGameScene3 => stage.setScene(GameScene(mainStage, selectedScene, new Game(new Map3), true))
 
         case Scenes.MapSelectionScene => stage.setScene(MapSelectionScene(mainStage, selectedScene))
@@ -57,7 +54,7 @@ object FortressFuryApp extends JFXApp3:
         case Scenes.TutorialScene => stage.setScene(TutorialScene(mainStage, selectedScene))
     )
 
-    mainStage.scene = MapSelectionScene(mainStage, selectedScene)
+    mainStage.scene = LobbyScene(mainStage, selectedScene)
     stage = mainStage
 
   end start
