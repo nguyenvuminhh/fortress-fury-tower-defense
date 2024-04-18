@@ -10,7 +10,7 @@ import logic.{Cannon, Cavalry, Game, Infantry, Map1, Turret, Headquarter}
 class Test extends AnyFlatSpec with Matchers:
   val game = Game(new logic.Map1())
 
-  //TODO: please comment line 144 and 147 of Tower.scala before testing function shoot()
+  //TODO: please comment line 153 and 156 of Tower.scala, 148 of Game.scala before testing
 
   /** giveGold() */
   "Gold" should "increased by 10 after giveGold() was called once" in {
