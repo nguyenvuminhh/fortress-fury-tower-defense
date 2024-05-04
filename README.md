@@ -19,7 +19,7 @@ saved for leaderboard statistics.
 - Multiple maps: the player can choose between 3 maps.
 
 ## Acknowledgement
-- The project has been completed with the assistance of the staff of the course _CS-C2105 - Programming Studio A_ at Aalto University.
+- The project has been completed with the assistance of the professors and teaching assistants of the course _CS-C2105 - Programming Studio A_ at Aalto University.
 - All graphics, including map, guns, enemies, are designed by me.
 
 ## Some screenshots
